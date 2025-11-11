@@ -1,0 +1,6 @@
+{
+  "name": "Powersoft Bias Amplifiers",
+  "render_readme": true,
+  "domains": ["number", "switch"],
+  "homeassistant": "2023.1.0"
+}
