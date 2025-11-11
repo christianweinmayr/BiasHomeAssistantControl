@@ -1,0 +1,22 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to Powersoft Bias Amplifier",
+        "description": "Enter the IP address and configuration for your Bias amplifier (Q1.5+, Q2, Q5)",
+        "data": {
+          "host": "IP Address",
+          "port": "HTTP Port",
+          "scan_interval": "Update Interval (seconds)"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to the amplifier. Check the IP address and ensure the device is powered on.",
+      "unknown": "Unexpected error occurred"
+    },
+    "abort": {
+      "already_configured": "Device is already configured"
+    }
+  }
+}
