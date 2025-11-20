@@ -591,18 +591,20 @@ class BiasOutputIIRGain(CoordinatorEntity[BiasDataUpdateCoordinator], NumberEnti
     @property
     def native_value(self) -> float | None:
         if self.coordinator.data:
-            linear_gain = self.coordinator.data.get("output_channels", {}).get(
+            # EQ API stores dB directly, not linear gain
+            db_gain = self.coordinator.data.get("output_channels", {}).get(
                 str(self._channel), {}
             ).get("iir", {}).get(str(self._band), {}).get("gain")
-            if linear_gain is not None:
-                return round(linear_to_db(linear_gain), 1)
+            if db_gain is not None:
+                return round(float(db_gain), 1)
         return None
 
     async def async_set_native_value(self, value: float) -> None:
         path = PATH_OUTPUT_IIR_GAIN.format(channel=self._channel, band=self._band)
-        linear_value = db_to_linear(value)
+        # EQ API expects dB directly, not linear gain
+        db_value = float(value)
         try:
-            await self.coordinator.client.write_value(path, linear_value)
+            await self.coordinator.client.write_value(path, db_value)
             if self.coordinator.data:
                 if "output_channels" not in self.coordinator.data:
                     self.coordinator.data["output_channels"] = {}
@@ -612,7 +614,7 @@ class BiasOutputIIRGain(CoordinatorEntity[BiasDataUpdateCoordinator], NumberEnti
                     self.coordinator.data["output_channels"][str(self._channel)]["iir"] = {}
                 if str(self._band) not in self.coordinator.data["output_channels"][str(self._channel)]["iir"]:
                     self.coordinator.data["output_channels"][str(self._channel)]["iir"][str(self._band)] = {}
-                self.coordinator.data["output_channels"][str(self._channel)]["iir"][str(self._band)]["gain"] = linear_value
+                self.coordinator.data["output_channels"][str(self._channel)]["iir"][str(self._band)]["gain"] = db_value
                 self.async_write_ha_state()
         except Exception as err:
             _LOGGER.error("Failed to set output IIR gain: %s", err)
@@ -716,28 +718,30 @@ class BiasPreOutputIIRGain(BiasOutputIIRGain):
     @property
     def native_value(self) -> float | None:
         if self.coordinator.data:
-            linear_gain = self.coordinator.data.get("pre_output_channels", {}).get(
+            # Speaker (Pre-Output) EQ API stores dB directly, not linear gain
+            db_gain = self.coordinator.data.get("output_channels", {}).get(
                 str(self._channel), {}
-            ).get("iir", {}).get(str(self._band), {}).get("gain")
-            if linear_gain is not None:
-                return round(linear_to_db(linear_gain), 1)
+            ).get("pre_iir", {}).get(str(self._band), {}).get("gain")
+            if db_gain is not None:
+                return round(float(db_gain), 1)
         return None
 
     async def async_set_native_value(self, value: float) -> None:
         path = PATH_PRE_OUTPUT_IIR_GAIN.format(channel=self._channel, band=self._band)
-        linear_value = db_to_linear(value)
+        # Speaker (Pre-Output) EQ API expects dB directly, not linear gain
+        db_value = float(value)
         try:
-            await self.coordinator.client.write_value(path, linear_value)
+            await self.coordinator.client.write_value(path, db_value)
             if self.coordinator.data:
-                if "pre_output_channels" not in self.coordinator.data:
-                    self.coordinator.data["pre_output_channels"] = {}
-                if str(self._channel) not in self.coordinator.data["pre_output_channels"]:
-                    self.coordinator.data["pre_output_channels"][str(self._channel)] = {}
-                if "iir" not in self.coordinator.data["pre_output_channels"][str(self._channel)]:
-                    self.coordinator.data["pre_output_channels"][str(self._channel)]["iir"] = {}
-                if str(self._band) not in self.coordinator.data["pre_output_channels"][str(self._channel)]["iir"]:
-                    self.coordinator.data["pre_output_channels"][str(self._channel)]["iir"][str(self._band)] = {}
-                self.coordinator.data["pre_output_channels"][str(self._channel)]["iir"][str(self._band)]["gain"] = linear_value
+                if "output_channels" not in self.coordinator.data:
+                    self.coordinator.data["output_channels"] = {}
+                if str(self._channel) not in self.coordinator.data["output_channels"]:
+                    self.coordinator.data["output_channels"][str(self._channel)] = {}
+                if "pre_iir" not in self.coordinator.data["output_channels"][str(self._channel)]:
+                    self.coordinator.data["output_channels"][str(self._channel)]["pre_iir"] = {}
+                if str(self._band) not in self.coordinator.data["output_channels"][str(self._channel)]["pre_iir"]:
+                    self.coordinator.data["output_channels"][str(self._channel)]["pre_iir"][str(self._band)] = {}
+                self.coordinator.data["output_channels"][str(self._channel)]["pre_iir"][str(self._band)]["gain"] = db_value
                 self.async_write_ha_state()
         except Exception as err:
             _LOGGER.error("Failed to set pre-output IIR gain: %s", err)
@@ -822,18 +826,20 @@ class BiasInputIIRGain(BiasOutputIIRGain):
     @property
     def native_value(self) -> float | None:
         if self.coordinator.data:
-            linear_gain = self.coordinator.data.get("input_channels", {}).get(
+            # Input EQ API stores dB directly, not linear gain
+            db_gain = self.coordinator.data.get("input_channels", {}).get(
                 str(self._channel), {}
             ).get("iir", {}).get(str(self._band), {}).get("gain")
-            if linear_gain is not None:
-                return round(linear_to_db(linear_gain), 1)
+            if db_gain is not None:
+                return round(float(db_gain), 1)
         return None
 
     async def async_set_native_value(self, value: float) -> None:
         path = PATH_INPUT_ZONE_IIR_GAIN.format(channel=self._channel, band=self._band)
-        linear_value = db_to_linear(value)
+        # Input EQ API expects dB directly, not linear gain
+        db_value = float(value)
         try:
-            await self.coordinator.client.write_value(path, linear_value)
+            await self.coordinator.client.write_value(path, db_value)
             if self.coordinator.data:
                 if "input_channels" not in self.coordinator.data:
                     self.coordinator.data["input_channels"] = {}
@@ -843,7 +849,7 @@ class BiasInputIIRGain(BiasOutputIIRGain):
                     self.coordinator.data["input_channels"][str(self._channel)]["iir"] = {}
                 if str(self._band) not in self.coordinator.data["input_channels"][str(self._channel)]["iir"]:
                     self.coordinator.data["input_channels"][str(self._channel)]["iir"][str(self._band)] = {}
-                self.coordinator.data["input_channels"][str(self._channel)]["iir"][str(self._band)]["gain"] = linear_value
+                self.coordinator.data["input_channels"][str(self._channel)]["iir"][str(self._band)]["gain"] = db_value
                 self.async_write_ha_state()
         except Exception as err:
             _LOGGER.error("Failed to set input IIR gain: %s", err)

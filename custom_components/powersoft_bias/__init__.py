@@ -631,7 +631,7 @@ class BiasDataUpdateCoordinator(DataUpdateCoordinator):
                             "enable": False,
                             "type": 0,
                             "fc": 1000.0,
-                            "gain": 1.0,
+                            "gain": 0.0,  # EQ gain in dB, 0 = unity
                             "q": 1.0,
                             "slope": 12,
                         }
@@ -667,7 +667,7 @@ class BiasDataUpdateCoordinator(DataUpdateCoordinator):
                             "enable": False,
                             "type": 0,
                             "fc": 1000.0,
-                            "gain": 1.0,
+                            "gain": 0.0,  # Speaker EQ gain in dB, 0 = unity
                             "q": 1.0,
                             "slope": 12,
                         }
@@ -743,7 +743,7 @@ class BiasDataUpdateCoordinator(DataUpdateCoordinator):
                             "enable": False,
                             "type": 0,
                             "fc": 1000.0,
-                            "gain": 1.0,
+                            "gain": 0.0,  # Input EQ gain in dB, 0 = unity
                             "q": 1.0,
                             "slope": 12,
                         }
