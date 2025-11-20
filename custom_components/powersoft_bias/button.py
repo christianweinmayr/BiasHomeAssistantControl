@@ -72,16 +72,6 @@ async def async_setup_entry(
             )
         )
 
-        # Rename button
-        entities.append(
-            BiasSceneRenameButton(
-                scene_manager,
-                entry,
-                scene,
-                hass,
-            )
-        )
-
         # Delete button
         entities.append(
             BiasSceneDeleteButton(
@@ -97,13 +87,12 @@ async def async_setup_entry(
     # Count button types for logging
     scene_buttons = len([e for e in entities if isinstance(e, BiasSceneButton)])
     update_buttons = len([e for e in entities if isinstance(e, BiasSceneUpdateButton)])
-    rename_buttons = len([e for e in entities if isinstance(e, BiasSceneRenameButton)])
     delete_buttons = len([e for e in entities if isinstance(e, BiasSceneDeleteButton)])
     create_buttons = len([e for e in entities if isinstance(e, BiasCreateSceneButton)])
 
     _LOGGER.info(
-        "Added %d total button(s): %d scene, %d update, %d rename, %d delete, %d create",
-        len(entities), scene_buttons, update_buttons, rename_buttons, delete_buttons, create_buttons
+        "Added %d total button(s): %d scene, %d update, %d delete, %d create",
+        len(entities), scene_buttons, update_buttons, delete_buttons, create_buttons
     )
     _LOGGER.info("Custom presets: %d", scene_manager.get_custom_scene_count())
 
@@ -221,68 +210,6 @@ class BiasSceneUpdateButton(CoordinatorEntity, ButtonEntity):
         except Exception as err:
             _LOGGER.error(
                 "Failed to update preset %s: %s", self._scene_config["name"], err
-            )
-            raise
-
-
-class BiasSceneRenameButton(ButtonEntity):
-    """Button to rename a custom preset."""
-
-    _attr_has_entity_name = True
-    _attr_icon = "mdi:rename-box"
-    _attr_entity_category = EntityCategory.CONFIG
-
-    def __init__(
-        self,
-        scene_manager: SceneManager,
-        entry: ConfigEntry,
-        scene_config: dict,
-        hass: HomeAssistant,
-    ):
-        """Initialize the rename button."""
-        self._scene_manager = scene_manager
-        self._scene_config = scene_config
-        self._entry = entry
-        self._hass = hass
-        self._attr_device_info = {
-            "identifiers": {(DOMAIN, entry.entry_id)},
-            "name": entry.title,
-            "manufacturer": MANUFACTURER,
-            "model": "Bias Amplifier",
-        }
-        self._attr_unique_id = f"{entry.entry_id}_{UID_SCENE}_{scene_config['id']}_rename"
-        self._attr_name = f"Preset - Rename '{scene_config['name']}'"
-
-    async def async_press(self) -> None:
-        """Handle button press - show notification with rename instructions."""
-        try:
-            scene_name = self._scene_config["name"]
-            scene_id = self._scene_config["id"]
-
-            # Create notification with instructions
-            await self._hass.services.async_call(
-                "persistent_notification",
-                "create",
-                {
-                    "title": f"Rename Preset '{scene_name}'",
-                    "message": f"To rename this preset, use the service:\n\n"
-                               f"**Service:** `powersoft_bias.rename_preset`\n\n"
-                               f"**Parameters:**\n"
-                               f"```yaml\n"
-                               f"scene_id: {scene_id}\n"
-                               f"name: \"Your New Name\"\n"
-                               f"```\n\n"
-                               f"Go to Developer Tools → Services to call this service.",
-                    "notification_id": f"{DOMAIN}_rename_scene_{scene_id}",
-                },
-            )
-
-            _LOGGER.info("Displayed rename instructions for preset '%s' (ID: %d)", scene_name, scene_id)
-
-        except Exception as err:
-            _LOGGER.error(
-                "Failed to show rename notification for preset %s: %s",
-                self._scene_config["name"], err
             )
             raise
 
