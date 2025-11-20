@@ -16,6 +16,7 @@ _LOGGER = logging.getLogger(__name__)
 # Data type constants
 TYPE_STRING = 10
 TYPE_FLOAT = 20
+TYPE_INT = 30
 TYPE_BOOL = 40
 
 # Action type constants
@@ -124,6 +125,8 @@ class BiasHTTPClient:
                     result[path] = data_obj.get("stringValue")
                 elif data_type == TYPE_FLOAT:
                     result[path] = data_obj.get("floatValue")
+                elif data_type == TYPE_INT:
+                    result[path] = data_obj.get("intValue")
                 elif data_type == TYPE_BOOL:
                     result[path] = data_obj.get("boolValue")
                 else:
