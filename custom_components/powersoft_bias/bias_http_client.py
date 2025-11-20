@@ -176,7 +176,10 @@ class BiasHTTPClient:
         # Determine data type and build data object
         if isinstance(value, bool):
             data_obj = {"type": TYPE_BOOL, "boolValue": value}
-        elif isinstance(value, (int, float)):
+        elif isinstance(value, int):
+            # Send integers as TYPE_INT (for filter types, slopes, etc.)
+            data_obj = {"type": TYPE_INT, "intValue": int(value)}
+        elif isinstance(value, float):
             data_obj = {"type": TYPE_FLOAT, "floatValue": float(value)}
         elif isinstance(value, str):
             data_obj = {"type": TYPE_STRING, "stringValue": value}
