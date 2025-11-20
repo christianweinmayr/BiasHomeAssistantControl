@@ -70,6 +70,8 @@ The preset system allows users to save and recall complete amplifier configurati
   "created_at": "2025-01-20T12:00:00Z",
   "updated_at": "2025-01-20T14:30:00Z"
 }
+
+Note: Channel keys are strings ("0", "1", "2", "3") for JSON compatibility.
 ```
 
 ### Storage Location

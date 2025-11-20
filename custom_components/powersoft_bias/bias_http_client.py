@@ -261,14 +261,14 @@ class BiasHTTPClient:
         # Read all values
         values = await self.read_values(paths)
 
-        # Structure data by channel
+        # Structure data by channel (use string keys for JSON compatibility)
         output_channels = {}
         for channel in range(4):
             gain_path = f"/Device/Audio/Presets/Live/OutputProcess/Channels/Channel-{channel}/Gain/Value"
             mute_path = f"/Device/Audio/Presets/Live/OutputProcess/Channels/Channel-{channel}/Mute/Value"
             name_path = f"/Device/Audio/Presets/Live/OutputProcess/Channels/Channel-{channel}/Name"
 
-            output_channels[channel] = {
+            output_channels[str(channel)] = {
                 "gain": values.get(gain_path, 1.0),
                 "mute": values.get(mute_path, False),
                 "name": values.get(name_path, f"Channel {channel + 1}"),
@@ -302,10 +302,10 @@ class BiasHTTPClient:
         Example:
             scene = {
                 "output_channels": {
-                    0: {"gain": 0.7, "mute": False, "name": "Main L"},
-                    1: {"gain": 0.7, "mute": False, "name": "Main R"},
-                    2: {"gain": 0.5, "mute": False, "name": "Sub"},
-                    3: {"gain": 0.5, "mute": False, "name": "Fill"}
+                    "0": {"gain": 0.7, "mute": False, "name": "Main L"},
+                    "1": {"gain": 0.7, "mute": False, "name": "Main R"},
+                    "2": {"gain": 0.5, "mute": False, "name": "Sub"},
+                    "3": {"gain": 0.5, "mute": False, "name": "Fill"}
                 },
                 "standby": False
             }
@@ -324,12 +324,13 @@ class BiasHTTPClient:
         # Build write values array
         write_values = []
 
-        # Apply each channel's settings
+        # Apply each channel's settings (handle both int and string keys for compatibility)
         for ch_idx in range(4):
-            if ch_idx not in output_channels:
+            ch_key = str(ch_idx)  # JSON always uses string keys
+            if ch_key not in output_channels and ch_idx not in output_channels:
                 raise ValueError(f"Missing channel {ch_idx} in preset")
 
-            ch_config = output_channels[ch_idx]
+            ch_config = output_channels.get(ch_key, output_channels.get(ch_idx))
 
             # Validate and write gain
             if "gain" not in ch_config:

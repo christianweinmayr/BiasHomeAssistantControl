@@ -120,12 +120,13 @@ class SceneManager:
         if not isinstance(output_channels, dict):
             raise ValueError("output_channels must be a dictionary")
 
-        # We expect 4 channels (0-3)
+        # We expect 4 channels (0-3), accept both string and int keys
         for ch_idx in range(4):
-            if ch_idx not in output_channels:
+            ch_key = str(ch_idx)  # JSON always uses string keys
+            if ch_key not in output_channels and ch_idx not in output_channels:
                 raise ValueError(f"Missing output channel {ch_idx}")
 
-            ch_config = output_channels[ch_idx]
+            ch_config = output_channels.get(ch_key, output_channels.get(ch_idx))
 
             # Validate gain
             if "gain" not in ch_config:
