@@ -20,8 +20,28 @@ from .const import (
     DEFAULT_TIMEOUT,
     DOMAIN,
     MAX_CHANNELS,
+    # Output paths
+    PATH_CHANNEL_NAME,
+    PATH_CHANNEL_ENABLE,
     PATH_CHANNEL_GAIN,
     PATH_CHANNEL_MUTE,
+    PATH_CHANNEL_POLARITY,
+    PATH_CHANNEL_OUT_DELAY_ENABLE,
+    PATH_CHANNEL_OUT_DELAY_VALUE,
+    # Input paths
+    PATH_INPUT_ENABLE,
+    PATH_INPUT_GAIN,
+    PATH_INPUT_MUTE,
+    PATH_INPUT_POLARITY,
+    PATH_INPUT_SHADING_GAIN,
+    PATH_INPUT_DELAY_ENABLE,
+    PATH_INPUT_DELAY_VALUE,
+    # System paths
+    PATH_STANDBY,
+    PATH_FIRMWARE_VERSION,
+    PATH_MODEL_NAME,
+    PATH_MODEL_SERIAL,
+    # Coordinator keys
     COORDINATOR,
     CLIENT,
     SCENE_MANAGER,
@@ -30,7 +50,7 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS: list[Platform] = [Platform.NUMBER, Platform.SWITCH, Platform.BUTTON]
+PLATFORMS: list[Platform] = [Platform.NUMBER, Platform.SWITCH, Platform.BUTTON, Platform.SENSOR]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -266,23 +286,77 @@ class BiasDataUpdateCoordinator(DataUpdateCoordinator):
         try:
             # Build list of paths to read
             paths = []
+
+            # Output channels - comprehensive parameters
             for channel in range(MAX_CHANNELS):
+                paths.append(PATH_CHANNEL_NAME.format(channel=channel))
+                paths.append(PATH_CHANNEL_ENABLE.format(channel=channel))
                 paths.append(PATH_CHANNEL_GAIN.format(channel=channel))
                 paths.append(PATH_CHANNEL_MUTE.format(channel=channel))
+                paths.append(PATH_CHANNEL_POLARITY.format(channel=channel))
+                paths.append(PATH_CHANNEL_OUT_DELAY_ENABLE.format(channel=channel))
+                paths.append(PATH_CHANNEL_OUT_DELAY_VALUE.format(channel=channel))
+
+            # Input channels - comprehensive parameters
+            for channel in range(MAX_CHANNELS):
+                paths.append(PATH_INPUT_ENABLE.format(channel=channel))
+                paths.append(PATH_INPUT_GAIN.format(channel=channel))
+                paths.append(PATH_INPUT_MUTE.format(channel=channel))
+                paths.append(PATH_INPUT_POLARITY.format(channel=channel))
+                paths.append(PATH_INPUT_SHADING_GAIN.format(channel=channel))
+                paths.append(PATH_INPUT_DELAY_ENABLE.format(channel=channel))
+                paths.append(PATH_INPUT_DELAY_VALUE.format(channel=channel))
+
+            # System parameters
+            paths.append(PATH_STANDBY)
+            paths.append(PATH_FIRMWARE_VERSION)
+            paths.append(PATH_MODEL_NAME)
+            paths.append(PATH_MODEL_SERIAL)
 
             # Read all values
             values = await self.client.read_values(paths)
 
-            # Structure data by channel
-            data = {"channels": {}}
-            for channel in range(MAX_CHANNELS):
-                gain_path = PATH_CHANNEL_GAIN.format(channel=channel)
-                mute_path = PATH_CHANNEL_MUTE.format(channel=channel)
+            # Structure data
+            data = {
+                "output_channels": {},
+                "input_channels": {},
+                "device_info": {},
+                "standby": None,
+            }
 
-                data["channels"][channel] = {
-                    "gain": values.get(gain_path, 1.0),
-                    "mute": values.get(mute_path, False),
+            # Parse output channels (use string keys for JSON compatibility)
+            for channel in range(MAX_CHANNELS):
+                ch_key = str(channel)
+                data["output_channels"][ch_key] = {
+                    "name": values.get(PATH_CHANNEL_NAME.format(channel=channel), f"Output {channel + 1}"),
+                    "enable": values.get(PATH_CHANNEL_ENABLE.format(channel=channel), True),
+                    "gain": values.get(PATH_CHANNEL_GAIN.format(channel=channel), 1.0),
+                    "mute": values.get(PATH_CHANNEL_MUTE.format(channel=channel), False),
+                    "polarity": values.get(PATH_CHANNEL_POLARITY.format(channel=channel), False),
+                    "delay_enable": values.get(PATH_CHANNEL_OUT_DELAY_ENABLE.format(channel=channel), False),
+                    "delay": values.get(PATH_CHANNEL_OUT_DELAY_VALUE.format(channel=channel), 0.0),
                 }
+
+            # Parse input channels (use string keys for JSON compatibility)
+            for channel in range(MAX_CHANNELS):
+                ch_key = str(channel)
+                data["input_channels"][ch_key] = {
+                    "enable": values.get(PATH_INPUT_ENABLE.format(channel=channel), True),
+                    "gain": values.get(PATH_INPUT_GAIN.format(channel=channel), 1.0),
+                    "mute": values.get(PATH_INPUT_MUTE.format(channel=channel), False),
+                    "polarity": values.get(PATH_INPUT_POLARITY.format(channel=channel), False),
+                    "shading_gain": values.get(PATH_INPUT_SHADING_GAIN.format(channel=channel), 1.0),
+                    "delay_enable": values.get(PATH_INPUT_DELAY_ENABLE.format(channel=channel), False),
+                    "delay": values.get(PATH_INPUT_DELAY_VALUE.format(channel=channel), 0.0),
+                }
+
+            # Parse system/device info
+            data["standby"] = values.get(PATH_STANDBY, False)
+            data["device_info"] = {
+                "firmware_version": values.get(PATH_FIRMWARE_VERSION, "Unknown"),
+                "model_name": values.get(PATH_MODEL_NAME, "Bias Amplifier"),
+                "serial_number": values.get(PATH_MODEL_SERIAL, "Unknown"),
+            }
 
             return data
 

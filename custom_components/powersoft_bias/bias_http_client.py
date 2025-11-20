@@ -249,38 +249,66 @@ class BiasHTTPClient:
         # Build list of paths to read
         paths = []
 
-        # Output channels (0-3): Gain, Mute, Name
+        # Output channels: All parameters
         for channel in range(4):
+            paths.append(f"/Device/Audio/Presets/Live/OutputProcess/Channels/Channel-{channel}/Name")
+            paths.append(f"/Device/Audio/Presets/Live/OutputProcess/Channels/Channel-{channel}/Enable")
             paths.append(f"/Device/Audio/Presets/Live/OutputProcess/Channels/Channel-{channel}/Gain/Value")
             paths.append(f"/Device/Audio/Presets/Live/OutputProcess/Channels/Channel-{channel}/Mute/Value")
-            paths.append(f"/Device/Audio/Presets/Live/OutputProcess/Channels/Channel-{channel}/Name")
+            paths.append(f"/Device/Audio/Presets/Live/OutputProcess/Channels/Channel-{channel}/OutPolarity/Value")
+            paths.append(f"/Device/Audio/Presets/Live/OutputProcess/Channels/Channel-{channel}/OutDelay/Enable")
+            paths.append(f"/Device/Audio/Presets/Live/OutputProcess/Channels/Channel-{channel}/OutDelay/Value")
 
-        # Standby state (if available)
+        # Input channels: All parameters
+        for channel in range(4):
+            paths.append(f"/Device/Audio/Presets/Live/InputProcess/Channels/Channel-{channel}/Enable/Value")
+            paths.append(f"/Device/Audio/Presets/Live/InputProcess/Channels/Channel-{channel}/Gain/Value")
+            paths.append(f"/Device/Audio/Presets/Live/InputProcess/Channels/Channel-{channel}/Mute/Value")
+            paths.append(f"/Device/Audio/Presets/Live/InputProcess/Channels/Channel-{channel}/InPolarity/Value")
+            paths.append(f"/Device/Audio/Presets/Live/InputProcess/Channels/Channel-{channel}/ShadingGain/Value")
+            paths.append(f"/Device/Audio/Presets/Live/InputProcess/Channels/Channel-{channel}/InDelay/Enable/Value")
+            paths.append(f"/Device/Audio/Presets/Live/InputProcess/Channels/Channel-{channel}/InDelay/Value")
+
+        # System state
         paths.append("/Device/Audio/Presets/Live/Generals/Standby/Value")
 
         # Read all values
         values = await self.read_values(paths)
 
-        # Structure data by channel (use string keys for JSON compatibility)
+        # Structure output channels data (use string keys for JSON compatibility)
         output_channels = {}
         for channel in range(4):
-            gain_path = f"/Device/Audio/Presets/Live/OutputProcess/Channels/Channel-{channel}/Gain/Value"
-            mute_path = f"/Device/Audio/Presets/Live/OutputProcess/Channels/Channel-{channel}/Mute/Value"
-            name_path = f"/Device/Audio/Presets/Live/OutputProcess/Channels/Channel-{channel}/Name"
-
             output_channels[str(channel)] = {
-                "gain": values.get(gain_path, 1.0),
-                "mute": values.get(mute_path, False),
-                "name": values.get(name_path, f"Channel {channel + 1}"),
+                "name": values.get(f"/Device/Audio/Presets/Live/OutputProcess/Channels/Channel-{channel}/Name", f"Output {channel + 1}"),
+                "enable": values.get(f"/Device/Audio/Presets/Live/OutputProcess/Channels/Channel-{channel}/Enable", True),
+                "gain": values.get(f"/Device/Audio/Presets/Live/OutputProcess/Channels/Channel-{channel}/Gain/Value", 1.0),
+                "mute": values.get(f"/Device/Audio/Presets/Live/OutputProcess/Channels/Channel-{channel}/Mute/Value", False),
+                "polarity": values.get(f"/Device/Audio/Presets/Live/OutputProcess/Channels/Channel-{channel}/OutPolarity/Value", False),
+                "delay_enable": values.get(f"/Device/Audio/Presets/Live/OutputProcess/Channels/Channel-{channel}/OutDelay/Enable", False),
+                "delay": values.get(f"/Device/Audio/Presets/Live/OutputProcess/Channels/Channel-{channel}/OutDelay/Value", 0.0),
             }
 
-        # Build preset configuration
+        # Structure input channels data (use string keys for JSON compatibility)
+        input_channels = {}
+        for channel in range(4):
+            input_channels[str(channel)] = {
+                "enable": values.get(f"/Device/Audio/Presets/Live/InputProcess/Channels/Channel-{channel}/Enable/Value", True),
+                "gain": values.get(f"/Device/Audio/Presets/Live/InputProcess/Channels/Channel-{channel}/Gain/Value", 1.0),
+                "mute": values.get(f"/Device/Audio/Presets/Live/InputProcess/Channels/Channel-{channel}/Mute/Value", False),
+                "polarity": values.get(f"/Device/Audio/Presets/Live/InputProcess/Channels/Channel-{channel}/InPolarity/Value", False),
+                "shading_gain": values.get(f"/Device/Audio/Presets/Live/InputProcess/Channels/Channel-{channel}/ShadingGain/Value", 1.0),
+                "delay_enable": values.get(f"/Device/Audio/Presets/Live/InputProcess/Channels/Channel-{channel}/InDelay/Enable/Value", False),
+                "delay": values.get(f"/Device/Audio/Presets/Live/InputProcess/Channels/Channel-{channel}/InDelay/Value", 0.0),
+            }
+
+        # Build comprehensive preset configuration
         preset_config = {
             "output_channels": output_channels,
+            "input_channels": input_channels,
             "standby": values.get("/Device/Audio/Presets/Live/Generals/Standby/Value", False),
         }
 
-        _LOGGER.info("Captured state: 4 output channels")
+        _LOGGER.info("Captured state: 4 output channels + 4 input channels (comprehensive)")
         return preset_config
 
     async def apply_scene(self, scene_config: Dict[str, Any]) -> None:
@@ -319,48 +347,142 @@ class BiasHTTPClient:
         if not isinstance(output_channels, dict) or len(output_channels) != 4:
             raise ValueError("Scene must contain 4 output channels (0-3)")
 
-        _LOGGER.info("Applying preset to amplifier...")
+        _LOGGER.info("Applying comprehensive preset to amplifier...")
 
         # Build write values array
         write_values = []
 
-        # Apply each channel's settings (handle both int and string keys for compatibility)
+        # =================================================================
+        # Apply output channel settings
+        # =================================================================
         for ch_idx in range(4):
             ch_key = str(ch_idx)  # JSON always uses string keys
             if ch_key not in output_channels and ch_idx not in output_channels:
-                raise ValueError(f"Missing channel {ch_idx} in preset")
+                raise ValueError(f"Missing output channel {ch_idx} in preset")
 
             ch_config = output_channels.get(ch_key, output_channels.get(ch_idx))
 
-            # Validate and write gain
-            if "gain" not in ch_config:
-                raise ValueError(f"Channel {ch_idx} missing gain")
-            gain = ch_config["gain"]
-            if not 0.0 <= gain <= 2.0:
-                raise ValueError(f"Channel {ch_idx} gain must be between 0.0 and 2.0")
+            # Enable
+            if "enable" in ch_config:
+                write_values.append({
+                    "id": f"/Device/Audio/Presets/Live/OutputProcess/Channels/Channel-{ch_idx}/Enable",
+                    "data": {"type": TYPE_BOOL, "boolValue": ch_config["enable"]},
+                    "single": True
+                })
 
-            gain_path = f"/Device/Audio/Presets/Live/OutputProcess/Channels/Channel-{ch_idx}/Gain/Value"
-            write_values.append({
-                "id": gain_path,
-                "data": {"type": TYPE_FLOAT, "floatValue": float(gain)},
-                "single": True
-            })
+            # Gain
+            if "gain" in ch_config:
+                gain = ch_config["gain"]
+                if not 0.0 <= gain <= 2.0:
+                    raise ValueError(f"Output channel {ch_idx} gain must be between 0.0 and 2.0")
+                write_values.append({
+                    "id": f"/Device/Audio/Presets/Live/OutputProcess/Channels/Channel-{ch_idx}/Gain/Value",
+                    "data": {"type": TYPE_FLOAT, "floatValue": float(gain)},
+                    "single": True
+                })
 
-            # Validate and write mute
-            if "mute" not in ch_config:
-                raise ValueError(f"Channel {ch_idx} missing mute")
-            mute = ch_config["mute"]
-            if not isinstance(mute, bool):
-                raise ValueError(f"Channel {ch_idx} mute must be boolean")
+            # Mute
+            if "mute" in ch_config:
+                write_values.append({
+                    "id": f"/Device/Audio/Presets/Live/OutputProcess/Channels/Channel-{ch_idx}/Mute/Value",
+                    "data": {"type": TYPE_BOOL, "boolValue": ch_config["mute"]},
+                    "single": True
+                })
 
-            mute_path = f"/Device/Audio/Presets/Live/OutputProcess/Channels/Channel-{ch_idx}/Mute/Value"
-            write_values.append({
-                "id": mute_path,
-                "data": {"type": TYPE_BOOL, "boolValue": mute},
-                "single": True
-            })
+            # Polarity
+            if "polarity" in ch_config:
+                write_values.append({
+                    "id": f"/Device/Audio/Presets/Live/OutputProcess/Channels/Channel-{ch_idx}/OutPolarity/Value",
+                    "data": {"type": TYPE_BOOL, "boolValue": ch_config["polarity"]},
+                    "single": True
+                })
 
+            # Delay enable
+            if "delay_enable" in ch_config:
+                write_values.append({
+                    "id": f"/Device/Audio/Presets/Live/OutputProcess/Channels/Channel-{ch_idx}/OutDelay/Enable",
+                    "data": {"type": TYPE_BOOL, "boolValue": ch_config["delay_enable"]},
+                    "single": True
+                })
+
+            # Delay value
+            if "delay" in ch_config:
+                write_values.append({
+                    "id": f"/Device/Audio/Presets/Live/OutputProcess/Channels/Channel-{ch_idx}/OutDelay/Value",
+                    "data": {"type": TYPE_FLOAT, "floatValue": float(ch_config["delay"])},
+                    "single": True
+                })
+
+        # =================================================================
+        # Apply input channel settings (if present in preset)
+        # =================================================================
+        input_channels = scene_config.get("input_channels", {})
+        for ch_idx in range(4):
+            ch_key = str(ch_idx)
+            if ch_key not in input_channels and ch_idx not in input_channels:
+                continue  # Input channels are optional in preset
+
+            ch_config = input_channels.get(ch_key, input_channels.get(ch_idx))
+
+            # Enable
+            if "enable" in ch_config:
+                write_values.append({
+                    "id": f"/Device/Audio/Presets/Live/InputProcess/Channels/Channel-{ch_idx}/Enable/Value",
+                    "data": {"type": TYPE_BOOL, "boolValue": ch_config["enable"]},
+                    "single": True
+                })
+
+            # Gain
+            if "gain" in ch_config:
+                write_values.append({
+                    "id": f"/Device/Audio/Presets/Live/InputProcess/Channels/Channel-{ch_idx}/Gain/Value",
+                    "data": {"type": TYPE_FLOAT, "floatValue": float(ch_config["gain"])},
+                    "single": True
+                })
+
+            # Mute
+            if "mute" in ch_config:
+                write_values.append({
+                    "id": f"/Device/Audio/Presets/Live/InputProcess/Channels/Channel-{ch_idx}/Mute/Value",
+                    "data": {"type": TYPE_BOOL, "boolValue": ch_config["mute"]},
+                    "single": True
+                })
+
+            # Polarity
+            if "polarity" in ch_config:
+                write_values.append({
+                    "id": f"/Device/Audio/Presets/Live/InputProcess/Channels/Channel-{ch_idx}/InPolarity/Value",
+                    "data": {"type": TYPE_BOOL, "boolValue": ch_config["polarity"]},
+                    "single": True
+                })
+
+            # Shading gain
+            if "shading_gain" in ch_config:
+                write_values.append({
+                    "id": f"/Device/Audio/Presets/Live/InputProcess/Channels/Channel-{ch_idx}/ShadingGain/Value",
+                    "data": {"type": TYPE_FLOAT, "floatValue": float(ch_config["shading_gain"])},
+                    "single": True
+                })
+
+            # Delay enable
+            if "delay_enable" in ch_config:
+                write_values.append({
+                    "id": f"/Device/Audio/Presets/Live/InputProcess/Channels/Channel-{ch_idx}/InDelay/Enable/Value",
+                    "data": {"type": TYPE_BOOL, "boolValue": ch_config["delay_enable"]},
+                    "single": True
+                })
+
+            # Delay value
+            if "delay" in ch_config:
+                write_values.append({
+                    "id": f"/Device/Audio/Presets/Live/InputProcess/Channels/Channel-{ch_idx}/InDelay/Value",
+                    "data": {"type": TYPE_FLOAT, "floatValue": float(ch_config["delay"])},
+                    "single": True
+                })
+
+        # =================================================================
         # Apply standby if specified
+        # =================================================================
         if "standby" in scene_config:
             standby = scene_config["standby"]
             if not isinstance(standby, bool):

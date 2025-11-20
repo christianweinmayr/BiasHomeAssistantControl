@@ -128,32 +128,70 @@ class SceneManager:
 
             ch_config = output_channels.get(ch_key, output_channels.get(ch_idx))
 
-            # Validate gain
-            if "gain" not in ch_config:
-                raise ValueError(f"Channel {ch_idx} missing gain")
-            if not isinstance(ch_config["gain"], (int, float)) or not 0.0 <= ch_config["gain"] <= 2.0:
-                raise ValueError(f"Channel {ch_idx} gain must be between 0.0 and 2.0")
+            # Validate optional fields (all optional now for flexibility)
+            if "enable" in ch_config and not isinstance(ch_config["enable"], bool):
+                raise ValueError(f"Output channel {ch_idx} enable must be boolean")
 
-            # Validate mute
-            if "mute" not in ch_config:
-                raise ValueError(f"Channel {ch_idx} missing mute")
-            if not isinstance(ch_config["mute"], bool):
-                raise ValueError(f"Channel {ch_idx} mute must be boolean")
+            if "gain" in ch_config:
+                if not isinstance(ch_config["gain"], (int, float)) or not 0.0 <= ch_config["gain"] <= 2.0:
+                    raise ValueError(f"Output channel {ch_idx} gain must be between 0.0 and 2.0")
 
-            # Name is optional but if present must be string
+            if "mute" in ch_config and not isinstance(ch_config["mute"], bool):
+                raise ValueError(f"Output channel {ch_idx} mute must be boolean")
+
+            if "polarity" in ch_config and not isinstance(ch_config["polarity"], bool):
+                raise ValueError(f"Output channel {ch_idx} polarity must be boolean")
+
+            if "delay_enable" in ch_config and not isinstance(ch_config["delay_enable"], bool):
+                raise ValueError(f"Output channel {ch_idx} delay_enable must be boolean")
+
+            if "delay" in ch_config and not isinstance(ch_config["delay"], (int, float)):
+                raise ValueError(f"Output channel {ch_idx} delay must be numeric")
+
             if "name" in ch_config and not isinstance(ch_config["name"], str):
-                raise ValueError(f"Channel {ch_idx} name must be string")
+                raise ValueError(f"Output channel {ch_idx} name must be string")
 
         # Validate standby if present
         if "standby" in config:
             if not isinstance(config["standby"], bool):
                 raise ValueError("Standby must be boolean")
 
-        # Validate input channels if present (optional for v1)
+        # Validate input channels if present (optional)
         if "input_channels" in config:
             input_channels = config["input_channels"]
             if not isinstance(input_channels, dict):
                 raise ValueError("input_channels must be a dictionary")
+
+            # Validate each input channel
+            for ch_idx in range(4):
+                ch_key = str(ch_idx)
+                if ch_key not in input_channels and ch_idx not in input_channels:
+                    continue  # Input channels are optional
+
+                ch_config = input_channels.get(ch_key, input_channels.get(ch_idx))
+
+                if "enable" in ch_config and not isinstance(ch_config["enable"], bool):
+                    raise ValueError(f"Input channel {ch_idx} enable must be boolean")
+
+                if "gain" in ch_config:
+                    if not isinstance(ch_config["gain"], (int, float)) or not 0.0 <= ch_config["gain"] <= 2.0:
+                        raise ValueError(f"Input channel {ch_idx} gain must be between 0.0 and 2.0")
+
+                if "mute" in ch_config and not isinstance(ch_config["mute"], bool):
+                    raise ValueError(f"Input channel {ch_idx} mute must be boolean")
+
+                if "polarity" in ch_config and not isinstance(ch_config["polarity"], bool):
+                    raise ValueError(f"Input channel {ch_idx} polarity must be boolean")
+
+                if "shading_gain" in ch_config:
+                    if not isinstance(ch_config["shading_gain"], (int, float)) or not 0.0 <= ch_config["shading_gain"] <= 2.0:
+                        raise ValueError(f"Input channel {ch_idx} shading_gain must be between 0.0 and 2.0")
+
+                if "delay_enable" in ch_config and not isinstance(ch_config["delay_enable"], bool):
+                    raise ValueError(f"Input channel {ch_idx} delay_enable must be boolean")
+
+                if "delay" in ch_config and not isinstance(ch_config["delay"], (int, float)):
+                    raise ValueError(f"Input channel {ch_idx} delay must be numeric")
 
     async def async_create_scene(
         self,
