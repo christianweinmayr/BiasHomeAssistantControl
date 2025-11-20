@@ -28,19 +28,20 @@ from .const import (
 _LOGGER = logging.getLogger(__name__)
 
 # Gain conversion constants
-# The amplifier's linear range 0.0-2.0 maps logarithmically to dB
+# The amplifier uses logarithmic dB scale
 # Formula: dB = 20 * log10(linear)
 # linear 1.0 = 0 dB (unity gain)
 # linear 2.0 = +6.02 dB (double amplitude)
+# linear 5.623 = +15 dB (verified maximum in Armonia)
 # linear 0.001 = -60 dB (practical minimum)
 GAIN_DB_MIN = -60.0
-GAIN_DB_MAX = 6.0
+GAIN_DB_MAX = 15.0
 GAIN_LINEAR_MIN = 0.001  # Avoid log(0), represents -60 dB
-GAIN_LINEAR_MAX = 2.0
+GAIN_LINEAR_MAX = 10.0  # Allow headroom beyond +15 dB (actual max ~5.62)
 
 
 def linear_to_db(linear: float) -> float:
-    """Convert linear gain (0.0-2.0) to dB (-60 to +6).
+    """Convert linear gain to dB (-60 to +15).
 
     Uses logarithmic conversion: dB = 20 * log10(linear)
     """
@@ -51,7 +52,7 @@ def linear_to_db(linear: float) -> float:
 
 
 def db_to_linear(db: float) -> float:
-    """Convert dB (-60 to +6) to linear gain (0.0-2.0).
+    """Convert dB (-60 to +15) to linear gain.
 
     Uses inverse logarithmic conversion: linear = 10^(dB/20)
     """
