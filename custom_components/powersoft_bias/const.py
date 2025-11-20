@@ -11,7 +11,7 @@ CONF_SCAN_INTERVAL: Final = "scan_interval"
 # Defaults
 DEFAULT_PORT: Final = 80
 DEFAULT_SCAN_INTERVAL: Final = 10  # seconds
-DEFAULT_TIMEOUT: Final = 5.0  # seconds
+DEFAULT_TIMEOUT: Final = 15.0  # seconds (increased for DSP parameter batching and preset operations)
 
 # Device info
 MANUFACTURER: Final = "Powersoft"
