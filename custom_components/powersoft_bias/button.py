@@ -304,8 +304,9 @@ class BiasCreateSceneButton(CoordinatorEntity, ButtonEntity):
 
             _LOGGER.info("Creating new preset: %s", scene_name)
 
-            # Capture current amplifier state
-            config = await self._client.capture_current_state()
+            # Use coordinator data instead of querying amplifier again
+            # This avoids timeout issues with 729 path requests
+            config = self.coordinator.data.copy() if self.coordinator.data else {}
 
             # Create the scene
             scene_id = await self._scene_manager.async_create_scene(scene_name, config)

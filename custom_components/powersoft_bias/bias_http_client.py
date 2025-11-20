@@ -1042,48 +1042,62 @@ class BiasHTTPClient:
                 "single": True
             })
 
-        # Send batch write request
+        # Send batch write requests (split into chunks to avoid timeout)
         if self._session is None:
             await self.connect()
 
-        payload = {
-            "clientId": self.client_id,
-            "payload": {
-                "type": "ACTION",
-                "action": {
-                    "type": ACTION_WRITE,
-                    "values": write_values
-                }
-            }
-        }
+        # Split write_values into batches of 100 to avoid overwhelming amplifier
+        BATCH_SIZE = 100
+        failed_writes = []
 
         try:
-            async with async_timeout.timeout(self.timeout):
-                async with self._session.post(
-                    f"{self.base_url}/am",
-                    json=payload,
-                    headers={"Content-Type": "application/json"}
-                ) as response:
-                    response.raise_for_status()
-                    data = await response.json()
+            for i in range(0, len(write_values), BATCH_SIZE):
+                batch = write_values[i:i + BATCH_SIZE]
+                batch_num = (i // BATCH_SIZE) + 1
+                total_batches = (len(write_values) + BATCH_SIZE - 1) // BATCH_SIZE
 
-            # Check results
-            action = data.get("payload", {}).get("action", {})
-            failed_writes = []
-            for value_obj in action.get("values", []):
-                if value_obj.get("result") != RESULT_SUCCESS:
-                    path = value_obj.get("id")
-                    result = value_obj.get("result")
-                    # Don't fail on standby errors (may not be writeable)
-                    if "Standby" not in path:
-                        failed_writes.append(f"{path} (result={result})")
-                    else:
-                        _LOGGER.warning("Standby write not successful (may not be supported): %s", path)
+                _LOGGER.debug(
+                    "Applying preset batch %d/%d (%d values)",
+                    batch_num, total_batches, len(batch)
+                )
 
+                payload = {
+                    "clientId": self.client_id,
+                    "payload": {
+                        "type": "ACTION",
+                        "action": {
+                            "type": ACTION_WRITE,
+                            "values": batch
+                        }
+                    }
+                }
+
+                async with async_timeout.timeout(self.timeout):
+                    async with self._session.post(
+                        f"{self.base_url}/am",
+                        json=payload,
+                        headers={"Content-Type": "application/json"}
+                    ) as response:
+                        response.raise_for_status()
+                        data = await response.json()
+
+                # Check results for this batch
+                action = data.get("payload", {}).get("action", {})
+                for value_obj in action.get("values", []):
+                    if value_obj.get("result") != RESULT_SUCCESS:
+                        path = value_obj.get("id")
+                        result = value_obj.get("result")
+                        # Don't fail on standby errors (may not be writeable)
+                        if "Standby" not in path:
+                            failed_writes.append(f"{path} (result={result})")
+                        else:
+                            _LOGGER.warning("Standby write not successful (may not be supported): %s", path)
+
+            # Check if any writes failed across all batches
             if failed_writes:
                 raise ValueError(f"Failed to write: {', '.join(failed_writes)}")
 
-            _LOGGER.info("Successfully applied preset")
+            _LOGGER.info("Successfully applied preset (%d values in %d batches)", len(write_values), total_batches)
 
         except aiohttp.ClientError as err:
             _LOGGER.error("HTTP request failed to %s: %s", self.host, err)

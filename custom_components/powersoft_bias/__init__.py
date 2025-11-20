@@ -178,12 +178,13 @@ async def async_register_services(hass: HomeAssistant) -> None:
         # Get the first available entry (services are domain-level, not per-entry)
         entry_id = next(iter(hass.data[DOMAIN].keys()))
         data = hass.data[DOMAIN][entry_id]
-        client: BiasHTTPClient = data[CLIENT]
+        coordinator: BiasDataUpdateCoordinator = data[COORDINATOR]
         scene_manager: SceneManager = data[SCENE_MANAGER]
 
         try:
-            # Capture current amplifier state
-            config = await client.capture_current_state()
+            # Use coordinator data instead of querying amplifier
+            # This avoids timeout issues with 729 path requests
+            config = coordinator.data.copy() if coordinator.data else {}
 
             # Save as new scene
             scene_id = await scene_manager.async_create_scene(name, config)
@@ -205,12 +206,13 @@ async def async_register_services(hass: HomeAssistant) -> None:
         # Get the first available entry
         entry_id = next(iter(hass.data[DOMAIN].keys()))
         data = hass.data[DOMAIN][entry_id]
-        client: BiasHTTPClient = data[CLIENT]
+        coordinator: BiasDataUpdateCoordinator = data[COORDINATOR]
         scene_manager: SceneManager = data[SCENE_MANAGER]
 
         try:
-            # Capture current amplifier state
-            config = await client.capture_current_state()
+            # Use coordinator data instead of querying amplifier
+            # This avoids timeout issues with 729 path requests
+            config = coordinator.data.copy() if coordinator.data else {}
 
             # Update existing scene
             await scene_manager.async_update_scene(scene_id, config)
