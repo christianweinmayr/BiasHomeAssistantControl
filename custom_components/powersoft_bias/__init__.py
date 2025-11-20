@@ -20,6 +20,10 @@ from .const import (
     DEFAULT_TIMEOUT,
     DOMAIN,
     MAX_CHANNELS,
+    MAX_OUTPUT_EQ_BANDS,
+    MAX_PRE_OUTPUT_EQ_BANDS,
+    MAX_INPUT_EQ_BANDS,
+    MAX_XOVER_BANDS,
     # Output paths
     PATH_CHANNEL_NAME,
     PATH_CHANNEL_ENABLE,
@@ -41,6 +45,49 @@ from .const import (
     PATH_FIRMWARE_VERSION,
     PATH_MODEL_NAME,
     PATH_MODEL_SERIAL,
+    # v0.4.0 - EQ paths
+    PATH_OUTPUT_IIR_ENABLE,
+    PATH_OUTPUT_IIR_TYPE,
+    PATH_OUTPUT_IIR_FC,
+    PATH_OUTPUT_IIR_GAIN,
+    PATH_OUTPUT_IIR_Q,
+    PATH_OUTPUT_IIR_SLOPE,
+    PATH_PRE_OUTPUT_IIR_ENABLE,
+    PATH_PRE_OUTPUT_IIR_TYPE,
+    PATH_PRE_OUTPUT_IIR_FC,
+    PATH_PRE_OUTPUT_IIR_GAIN,
+    PATH_PRE_OUTPUT_IIR_Q,
+    PATH_PRE_OUTPUT_IIR_SLOPE,
+    PATH_INPUT_ZONE_IIR_ENABLE,
+    PATH_INPUT_ZONE_IIR_TYPE,
+    PATH_INPUT_ZONE_IIR_FC,
+    PATH_INPUT_ZONE_IIR_GAIN,
+    PATH_INPUT_ZONE_IIR_Q,
+    PATH_INPUT_ZONE_IIR_SLOPE,
+    # v0.4.0 - Limiter paths
+    PATH_LIMITER_CLIP_ENABLE,
+    PATH_LIMITER_CLIP_THRESHOLD,
+    PATH_LIMITER_PEAK_ENABLE,
+    PATH_LIMITER_PEAK_THRESHOLD,
+    PATH_LIMITER_VRMS_ENABLE,
+    PATH_LIMITER_VRMS_THRESHOLD,
+    PATH_LIMITER_IRMS_ENABLE,
+    PATH_LIMITER_IRMS_THRESHOLD,
+    PATH_LIMITER_CLAMP_ENABLE,
+    PATH_LIMITER_CLAMP_THRESHOLD,
+    PATH_LIMITER_THERMAL_ENABLE,
+    PATH_LIMITER_THERMAL_THRESHOLD,
+    PATH_LIMITER_TRUEPOWER_ENABLE,
+    PATH_LIMITER_TRUEPOWER_THRESHOLD,
+    # v0.4.0 - Crossover paths
+    PATH_XOVER_ENABLE,
+    PATH_XOVER_FC,
+    PATH_XOVER_SLOPE,
+    # v0.4.0 - Matrix paths
+    PATH_MATRIX_INPUT_GAIN,
+    PATH_MATRIX_INPUT_MUTE,
+    PATH_MATRIX_CHANNEL_GAIN,
+    PATH_MATRIX_CHANNEL_MUTE,
     # Coordinator keys
     COORDINATOR,
     CLIENT,
@@ -307,6 +354,69 @@ class BiasDataUpdateCoordinator(DataUpdateCoordinator):
                 paths.append(PATH_INPUT_DELAY_ENABLE.format(channel=channel))
                 paths.append(PATH_INPUT_DELAY_VALUE.format(channel=channel))
 
+            # v0.4.0 - Output IIR EQ parameters (8 bands per channel)
+            for channel in range(MAX_CHANNELS):
+                for band in range(8):
+                    paths.append(PATH_OUTPUT_IIR_ENABLE.format(channel=channel, band=band))
+                    paths.append(PATH_OUTPUT_IIR_TYPE.format(channel=channel, band=band))
+                    paths.append(PATH_OUTPUT_IIR_FC.format(channel=channel, band=band))
+                    paths.append(PATH_OUTPUT_IIR_GAIN.format(channel=channel, band=band))
+                    paths.append(PATH_OUTPUT_IIR_Q.format(channel=channel, band=band))
+                    paths.append(PATH_OUTPUT_IIR_SLOPE.format(channel=channel, band=band))
+
+            # v0.4.0 - Pre-Output IIR EQ parameters (8 bands per channel)
+            for channel in range(MAX_CHANNELS):
+                for band in range(8):
+                    paths.append(PATH_PRE_OUTPUT_IIR_ENABLE.format(channel=channel, band=band))
+                    paths.append(PATH_PRE_OUTPUT_IIR_TYPE.format(channel=channel, band=band))
+                    paths.append(PATH_PRE_OUTPUT_IIR_FC.format(channel=channel, band=band))
+                    paths.append(PATH_PRE_OUTPUT_IIR_GAIN.format(channel=channel, band=band))
+                    paths.append(PATH_PRE_OUTPUT_IIR_Q.format(channel=channel, band=band))
+                    paths.append(PATH_PRE_OUTPUT_IIR_SLOPE.format(channel=channel, band=band))
+
+            # v0.4.0 - Input IIR EQ parameters (7 bands per channel)
+            for channel in range(MAX_CHANNELS):
+                for band in range(7):
+                    paths.append(PATH_INPUT_ZONE_IIR_ENABLE.format(channel=channel, band=band))
+                    paths.append(PATH_INPUT_ZONE_IIR_TYPE.format(channel=channel, band=band))
+                    paths.append(PATH_INPUT_ZONE_IIR_FC.format(channel=channel, band=band))
+                    paths.append(PATH_INPUT_ZONE_IIR_GAIN.format(channel=channel, band=band))
+                    paths.append(PATH_INPUT_ZONE_IIR_Q.format(channel=channel, band=band))
+                    paths.append(PATH_INPUT_ZONE_IIR_SLOPE.format(channel=channel, band=band))
+
+            # v0.4.0 - Limiter parameters (7 types per channel)
+            for channel in range(MAX_CHANNELS):
+                paths.append(PATH_LIMITER_CLIP_ENABLE.format(channel=channel))
+                paths.append(PATH_LIMITER_CLIP_THRESHOLD.format(channel=channel))
+                paths.append(PATH_LIMITER_PEAK_ENABLE.format(channel=channel))
+                paths.append(PATH_LIMITER_PEAK_THRESHOLD.format(channel=channel))
+                paths.append(PATH_LIMITER_VRMS_ENABLE.format(channel=channel))
+                paths.append(PATH_LIMITER_VRMS_THRESHOLD.format(channel=channel))
+                paths.append(PATH_LIMITER_IRMS_ENABLE.format(channel=channel))
+                paths.append(PATH_LIMITER_IRMS_THRESHOLD.format(channel=channel))
+                paths.append(PATH_LIMITER_CLAMP_ENABLE.format(channel=channel))
+                paths.append(PATH_LIMITER_CLAMP_THRESHOLD.format(channel=channel))
+                paths.append(PATH_LIMITER_THERMAL_ENABLE.format(channel=channel))
+                paths.append(PATH_LIMITER_THERMAL_THRESHOLD.format(channel=channel))
+                paths.append(PATH_LIMITER_TRUEPOWER_ENABLE.format(channel=channel))
+                paths.append(PATH_LIMITER_TRUEPOWER_THRESHOLD.format(channel=channel))
+
+            # v0.4.0 - Crossover parameters (2 bands per channel)
+            for channel in range(MAX_CHANNELS):
+                for band in range(MAX_XOVER_BANDS):
+                    paths.append(PATH_XOVER_ENABLE.format(channel=channel, band=band))
+                    paths.append(PATH_XOVER_FC.format(channel=channel, band=band))
+                    paths.append(PATH_XOVER_SLOPE.format(channel=channel, band=band))
+
+            # v0.4.0 - Matrix mixer parameters (4×4 matrix)
+            for input_ch in range(MAX_CHANNELS):
+                paths.append(PATH_MATRIX_INPUT_GAIN.format(input=input_ch))
+                paths.append(PATH_MATRIX_INPUT_MUTE.format(input=input_ch))
+            for channel in range(MAX_CHANNELS):
+                for input_ch in range(MAX_CHANNELS):
+                    paths.append(PATH_MATRIX_CHANNEL_GAIN.format(channel=channel, input=input_ch))
+                    paths.append(PATH_MATRIX_CHANNEL_MUTE.format(channel=channel, input=input_ch))
+
             # System parameters
             paths.append(PATH_STANDBY)
             paths.append(PATH_FIRMWARE_VERSION)
@@ -322,6 +432,9 @@ class BiasDataUpdateCoordinator(DataUpdateCoordinator):
                 "input_channels": {},
                 "device_info": {},
                 "standby": None,
+                "limiters": {},
+                "crossovers": {},
+                "matrix": {"inputs": {}, "channels": {}},
             }
 
             # Parse output channels (use string keys for JSON compatibility)
@@ -335,7 +448,33 @@ class BiasDataUpdateCoordinator(DataUpdateCoordinator):
                     "polarity": values.get(PATH_CHANNEL_POLARITY.format(channel=channel), False),
                     "delay_enable": values.get(PATH_CHANNEL_OUT_DELAY_ENABLE.format(channel=channel), False),
                     "delay": values.get(PATH_CHANNEL_OUT_DELAY_VALUE.format(channel=channel), 0.0),
+                    "iir": {},
+                    "pre_iir": {},
                 }
+
+                # v0.4.0 - Output IIR EQ (8 bands)
+                for band in range(8):
+                    band_key = str(band)
+                    data["output_channels"][ch_key]["iir"][band_key] = {
+                        "enable": values.get(PATH_OUTPUT_IIR_ENABLE.format(channel=channel, band=band), False),
+                        "type": values.get(PATH_OUTPUT_IIR_TYPE.format(channel=channel, band=band), 0),
+                        "fc": values.get(PATH_OUTPUT_IIR_FC.format(channel=channel, band=band), 1000.0),
+                        "gain": values.get(PATH_OUTPUT_IIR_GAIN.format(channel=channel, band=band), 1.0),
+                        "q": values.get(PATH_OUTPUT_IIR_Q.format(channel=channel, band=band), 1.0),
+                        "slope": values.get(PATH_OUTPUT_IIR_SLOPE.format(channel=channel, band=band), 12),
+                    }
+
+                # v0.4.0 - Pre-Output IIR EQ (8 bands)
+                for band in range(8):
+                    band_key = str(band)
+                    data["output_channels"][ch_key]["pre_iir"][band_key] = {
+                        "enable": values.get(PATH_PRE_OUTPUT_IIR_ENABLE.format(channel=channel, band=band), False),
+                        "type": values.get(PATH_PRE_OUTPUT_IIR_TYPE.format(channel=channel, band=band), 0),
+                        "fc": values.get(PATH_PRE_OUTPUT_IIR_FC.format(channel=channel, band=band), 1000.0),
+                        "gain": values.get(PATH_PRE_OUTPUT_IIR_GAIN.format(channel=channel, band=band), 1.0),
+                        "q": values.get(PATH_PRE_OUTPUT_IIR_Q.format(channel=channel, band=band), 1.0),
+                        "slope": values.get(PATH_PRE_OUTPUT_IIR_SLOPE.format(channel=channel, band=band), 12),
+                    }
 
             # Parse input channels (use string keys for JSON compatibility)
             for channel in range(MAX_CHANNELS):
@@ -348,7 +487,84 @@ class BiasDataUpdateCoordinator(DataUpdateCoordinator):
                     "shading_gain": values.get(PATH_INPUT_SHADING_GAIN.format(channel=channel), 1.0),
                     "delay_enable": values.get(PATH_INPUT_DELAY_ENABLE.format(channel=channel), False),
                     "delay": values.get(PATH_INPUT_DELAY_VALUE.format(channel=channel), 0.0),
+                    "iir": {},
                 }
+
+                # v0.4.0 - Input IIR EQ (7 bands)
+                for band in range(7):
+                    band_key = str(band)
+                    data["input_channels"][ch_key]["iir"][band_key] = {
+                        "enable": values.get(PATH_INPUT_ZONE_IIR_ENABLE.format(channel=channel, band=band), False),
+                        "type": values.get(PATH_INPUT_ZONE_IIR_TYPE.format(channel=channel, band=band), 0),
+                        "fc": values.get(PATH_INPUT_ZONE_IIR_FC.format(channel=channel, band=band), 1000.0),
+                        "gain": values.get(PATH_INPUT_ZONE_IIR_GAIN.format(channel=channel, band=band), 1.0),
+                        "q": values.get(PATH_INPUT_ZONE_IIR_Q.format(channel=channel, band=band), 1.0),
+                        "slope": values.get(PATH_INPUT_ZONE_IIR_SLOPE.format(channel=channel, band=band), 12),
+                    }
+
+            # v0.4.0 - Parse limiters
+            for channel in range(MAX_CHANNELS):
+                ch_key = str(channel)
+                data["limiters"][ch_key] = {
+                    "clip": {
+                        "enable": values.get(PATH_LIMITER_CLIP_ENABLE.format(channel=channel), False),
+                        "threshold": values.get(PATH_LIMITER_CLIP_THRESHOLD.format(channel=channel), 1.0),
+                    },
+                    "peak": {
+                        "enable": values.get(PATH_LIMITER_PEAK_ENABLE.format(channel=channel), False),
+                        "threshold": values.get(PATH_LIMITER_PEAK_THRESHOLD.format(channel=channel), 1.0),
+                    },
+                    "vrms": {
+                        "enable": values.get(PATH_LIMITER_VRMS_ENABLE.format(channel=channel), False),
+                        "threshold": values.get(PATH_LIMITER_VRMS_THRESHOLD.format(channel=channel), 1.0),
+                    },
+                    "irms": {
+                        "enable": values.get(PATH_LIMITER_IRMS_ENABLE.format(channel=channel), False),
+                        "threshold": values.get(PATH_LIMITER_IRMS_THRESHOLD.format(channel=channel), 1.0),
+                    },
+                    "clamp": {
+                        "enable": values.get(PATH_LIMITER_CLAMP_ENABLE.format(channel=channel), False),
+                        "threshold": values.get(PATH_LIMITER_CLAMP_THRESHOLD.format(channel=channel), 1.0),
+                    },
+                    "thermal": {
+                        "enable": values.get(PATH_LIMITER_THERMAL_ENABLE.format(channel=channel), False),
+                        "threshold": values.get(PATH_LIMITER_THERMAL_THRESHOLD.format(channel=channel), 1.0),
+                    },
+                    "truepower": {
+                        "enable": values.get(PATH_LIMITER_TRUEPOWER_ENABLE.format(channel=channel), False),
+                        "threshold": values.get(PATH_LIMITER_TRUEPOWER_THRESHOLD.format(channel=channel), 1.0),
+                    },
+                }
+
+            # v0.4.0 - Parse crossovers
+            for channel in range(MAX_CHANNELS):
+                ch_key = str(channel)
+                data["crossovers"][ch_key] = {}
+                for band in range(MAX_XOVER_BANDS):
+                    band_key = str(band)
+                    data["crossovers"][ch_key][band_key] = {
+                        "enable": values.get(PATH_XOVER_ENABLE.format(channel=channel, band=band), False),
+                        "fc": values.get(PATH_XOVER_FC.format(channel=channel, band=band), 1000.0),
+                        "slope": values.get(PATH_XOVER_SLOPE.format(channel=channel, band=band), 12),
+                    }
+
+            # v0.4.0 - Parse matrix mixer
+            for input_ch in range(MAX_CHANNELS):
+                in_key = str(input_ch)
+                data["matrix"]["inputs"][in_key] = {
+                    "gain": values.get(PATH_MATRIX_INPUT_GAIN.format(input=input_ch), 1.0),
+                    "mute": values.get(PATH_MATRIX_INPUT_MUTE.format(input=input_ch), False),
+                }
+
+            for channel in range(MAX_CHANNELS):
+                ch_key = str(channel)
+                data["matrix"]["channels"][ch_key] = {"routing": {}}
+                for input_ch in range(MAX_CHANNELS):
+                    in_key = str(input_ch)
+                    data["matrix"]["channels"][ch_key]["routing"][in_key] = {
+                        "gain": values.get(PATH_MATRIX_CHANNEL_GAIN.format(channel=channel, input=input_ch), 1.0),
+                        "mute": values.get(PATH_MATRIX_CHANNEL_MUTE.format(channel=channel, input=input_ch), False),
+                    }
 
             # Parse system/device info
             data["standby"] = values.get(PATH_STANDBY, False)
