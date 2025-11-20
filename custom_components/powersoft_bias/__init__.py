@@ -354,68 +354,73 @@ class BiasDataUpdateCoordinator(DataUpdateCoordinator):
                 paths.append(PATH_INPUT_DELAY_ENABLE.format(channel=channel))
                 paths.append(PATH_INPUT_DELAY_VALUE.format(channel=channel))
 
-            # v0.4.0 - Output IIR EQ parameters (8 bands per channel)
-            for channel in range(MAX_CHANNELS):
-                for band in range(8):
-                    paths.append(PATH_OUTPUT_IIR_ENABLE.format(channel=channel, band=band))
-                    paths.append(PATH_OUTPUT_IIR_TYPE.format(channel=channel, band=band))
-                    paths.append(PATH_OUTPUT_IIR_FC.format(channel=channel, band=band))
-                    paths.append(PATH_OUTPUT_IIR_GAIN.format(channel=channel, band=band))
-                    paths.append(PATH_OUTPUT_IIR_Q.format(channel=channel, band=band))
-                    paths.append(PATH_OUTPUT_IIR_SLOPE.format(channel=channel, band=band))
+            # v0.4.0 - DSP Parameters (DISABLED due to timeout with ~700+ parameters)
+            # NOTE: DSP entities will still work via direct read/write, but values
+            # won't be polled/refreshed automatically by the coordinator.
+            # TODO: Implement on-demand fetching or split into batches
 
-            # v0.4.0 - Pre-Output IIR EQ parameters (8 bands per channel)
-            for channel in range(MAX_CHANNELS):
-                for band in range(8):
-                    paths.append(PATH_PRE_OUTPUT_IIR_ENABLE.format(channel=channel, band=band))
-                    paths.append(PATH_PRE_OUTPUT_IIR_TYPE.format(channel=channel, band=band))
-                    paths.append(PATH_PRE_OUTPUT_IIR_FC.format(channel=channel, band=band))
-                    paths.append(PATH_PRE_OUTPUT_IIR_GAIN.format(channel=channel, band=band))
-                    paths.append(PATH_PRE_OUTPUT_IIR_Q.format(channel=channel, band=band))
-                    paths.append(PATH_PRE_OUTPUT_IIR_SLOPE.format(channel=channel, band=band))
+            # # v0.4.0 - Output IIR EQ parameters (8 bands per channel)
+            # for channel in range(MAX_CHANNELS):
+            #     for band in range(8):
+            #         paths.append(PATH_OUTPUT_IIR_ENABLE.format(channel=channel, band=band))
+            #         paths.append(PATH_OUTPUT_IIR_TYPE.format(channel=channel, band=band))
+            #         paths.append(PATH_OUTPUT_IIR_FC.format(channel=channel, band=band))
+            #         paths.append(PATH_OUTPUT_IIR_GAIN.format(channel=channel, band=band))
+            #         paths.append(PATH_OUTPUT_IIR_Q.format(channel=channel, band=band))
+            #         paths.append(PATH_OUTPUT_IIR_SLOPE.format(channel=channel, band=band))
 
-            # v0.4.0 - Input IIR EQ parameters (7 bands per channel)
-            for channel in range(MAX_CHANNELS):
-                for band in range(7):
-                    paths.append(PATH_INPUT_ZONE_IIR_ENABLE.format(channel=channel, band=band))
-                    paths.append(PATH_INPUT_ZONE_IIR_TYPE.format(channel=channel, band=band))
-                    paths.append(PATH_INPUT_ZONE_IIR_FC.format(channel=channel, band=band))
-                    paths.append(PATH_INPUT_ZONE_IIR_GAIN.format(channel=channel, band=band))
-                    paths.append(PATH_INPUT_ZONE_IIR_Q.format(channel=channel, band=band))
-                    paths.append(PATH_INPUT_ZONE_IIR_SLOPE.format(channel=channel, band=band))
+            # # v0.4.0 - Pre-Output IIR EQ parameters (8 bands per channel)
+            # for channel in range(MAX_CHANNELS):
+            #     for band in range(8):
+            #         paths.append(PATH_PRE_OUTPUT_IIR_ENABLE.format(channel=channel, band=band))
+            #         paths.append(PATH_PRE_OUTPUT_IIR_TYPE.format(channel=channel, band=band))
+            #         paths.append(PATH_PRE_OUTPUT_IIR_FC.format(channel=channel, band=band))
+            #         paths.append(PATH_PRE_OUTPUT_IIR_GAIN.format(channel=channel, band=band))
+            #         paths.append(PATH_PRE_OUTPUT_IIR_Q.format(channel=channel, band=band))
+            #         paths.append(PATH_PRE_OUTPUT_IIR_SLOPE.format(channel=channel, band=band))
 
-            # v0.4.0 - Limiter parameters (7 types per channel)
-            for channel in range(MAX_CHANNELS):
-                paths.append(PATH_LIMITER_CLIP_ENABLE.format(channel=channel))
-                paths.append(PATH_LIMITER_CLIP_THRESHOLD.format(channel=channel))
-                paths.append(PATH_LIMITER_PEAK_ENABLE.format(channel=channel))
-                paths.append(PATH_LIMITER_PEAK_THRESHOLD.format(channel=channel))
-                paths.append(PATH_LIMITER_VRMS_ENABLE.format(channel=channel))
-                paths.append(PATH_LIMITER_VRMS_THRESHOLD.format(channel=channel))
-                paths.append(PATH_LIMITER_IRMS_ENABLE.format(channel=channel))
-                paths.append(PATH_LIMITER_IRMS_THRESHOLD.format(channel=channel))
-                paths.append(PATH_LIMITER_CLAMP_ENABLE.format(channel=channel))
-                paths.append(PATH_LIMITER_CLAMP_THRESHOLD.format(channel=channel))
-                paths.append(PATH_LIMITER_THERMAL_ENABLE.format(channel=channel))
-                paths.append(PATH_LIMITER_THERMAL_THRESHOLD.format(channel=channel))
-                paths.append(PATH_LIMITER_TRUEPOWER_ENABLE.format(channel=channel))
-                paths.append(PATH_LIMITER_TRUEPOWER_THRESHOLD.format(channel=channel))
+            # # v0.4.0 - Input IIR EQ parameters (7 bands per channel)
+            # for channel in range(MAX_CHANNELS):
+            #     for band in range(7):
+            #         paths.append(PATH_INPUT_ZONE_IIR_ENABLE.format(channel=channel, band=band))
+            #         paths.append(PATH_INPUT_ZONE_IIR_TYPE.format(channel=channel, band=band))
+            #         paths.append(PATH_INPUT_ZONE_IIR_FC.format(channel=channel, band=band))
+            #         paths.append(PATH_INPUT_ZONE_IIR_GAIN.format(channel=channel, band=band))
+            #         paths.append(PATH_INPUT_ZONE_IIR_Q.format(channel=channel, band=band))
+            #         paths.append(PATH_INPUT_ZONE_IIR_SLOPE.format(channel=channel, band=band))
 
-            # v0.4.0 - Crossover parameters (2 bands per channel)
-            for channel in range(MAX_CHANNELS):
-                for band in range(MAX_XOVER_BANDS):
-                    paths.append(PATH_XOVER_ENABLE.format(channel=channel, band=band))
-                    paths.append(PATH_XOVER_FC.format(channel=channel, band=band))
-                    paths.append(PATH_XOVER_SLOPE.format(channel=channel, band=band))
+            # # v0.4.0 - Limiter parameters (7 types per channel)
+            # for channel in range(MAX_CHANNELS):
+            #     paths.append(PATH_LIMITER_CLIP_ENABLE.format(channel=channel))
+            #     paths.append(PATH_LIMITER_CLIP_THRESHOLD.format(channel=channel))
+            #     paths.append(PATH_LIMITER_PEAK_ENABLE.format(channel=channel))
+            #     paths.append(PATH_LIMITER_PEAK_THRESHOLD.format(channel=channel))
+            #     paths.append(PATH_LIMITER_VRMS_ENABLE.format(channel=channel))
+            #     paths.append(PATH_LIMITER_VRMS_THRESHOLD.format(channel=channel))
+            #     paths.append(PATH_LIMITER_IRMS_ENABLE.format(channel=channel))
+            #     paths.append(PATH_LIMITER_IRMS_THRESHOLD.format(channel=channel))
+            #     paths.append(PATH_LIMITER_CLAMP_ENABLE.format(channel=channel))
+            #     paths.append(PATH_LIMITER_CLAMP_THRESHOLD.format(channel=channel))
+            #     paths.append(PATH_LIMITER_THERMAL_ENABLE.format(channel=channel))
+            #     paths.append(PATH_LIMITER_THERMAL_THRESHOLD.format(channel=channel))
+            #     paths.append(PATH_LIMITER_TRUEPOWER_ENABLE.format(channel=channel))
+            #     paths.append(PATH_LIMITER_TRUEPOWER_THRESHOLD.format(channel=channel))
 
-            # v0.4.0 - Matrix mixer parameters (4×4 matrix)
-            for input_ch in range(MAX_CHANNELS):
-                paths.append(PATH_MATRIX_IN_GAIN.format(input=input_ch))
-                paths.append(PATH_MATRIX_IN_MUTE.format(input=input_ch))
-            for channel in range(MAX_CHANNELS):
-                for input_ch in range(MAX_CHANNELS):
-                    paths.append(PATH_MATRIX_CHANNEL_GAIN.format(channel=channel, input=input_ch))
-                    paths.append(PATH_MATRIX_CHANNEL_MUTE.format(channel=channel, input=input_ch))
+            # # v0.4.0 - Crossover parameters (2 bands per channel)
+            # for channel in range(MAX_CHANNELS):
+            #     for band in range(MAX_XOVER_BANDS):
+            #         paths.append(PATH_XOVER_ENABLE.format(channel=channel, band=band))
+            #         paths.append(PATH_XOVER_FC.format(channel=channel, band=band))
+            #         paths.append(PATH_XOVER_SLOPE.format(channel=channel, band=band))
+
+            # # v0.4.0 - Matrix mixer parameters (4×4 matrix)
+            # for input_ch in range(MAX_CHANNELS):
+            #     paths.append(PATH_MATRIX_IN_GAIN.format(input=input_ch))
+            #     paths.append(PATH_MATRIX_IN_MUTE.format(input=input_ch))
+            # for channel in range(MAX_CHANNELS):
+            #     for input_ch in range(MAX_CHANNELS):
+            #         paths.append(PATH_MATRIX_CHANNEL_GAIN.format(channel=channel, input=input_ch))
+            #         paths.append(PATH_MATRIX_CHANNEL_MUTE.format(channel=channel, input=input_ch))
 
             # System parameters
             paths.append(PATH_STANDBY)
