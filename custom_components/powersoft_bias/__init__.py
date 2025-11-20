@@ -564,81 +564,209 @@ class BiasDataUpdateCoordinator(DataUpdateCoordinator):
             # Read all values
             values = await self.client.read_values(paths)
 
-            # Structure data
-            data = {
-                "output_channels": {},
-                "input_channels": {},
-                "device_info": {},
-                "standby": None,
-                "limiters": {},
-                "crossovers": {},
-                "matrix": {"inputs": {}, "channels": {}},
-            }
+            # Start with existing data if available, otherwise create new structure
+            # This preserves values from previous batches that aren't in the current batch
+            if self.data:
+                data = self.data.copy()
+            else:
+                data = {
+                    "output_channels": {},
+                    "input_channels": {},
+                    "device_info": {},
+                    "standby": None,
+                    "limiters": {},
+                    "crossovers": {},
+                    "matrix": {"inputs": {}, "channels": {}},
+                }
 
             # Parse output channels (use string keys for JSON compatibility)
             for channel in range(MAX_CHANNELS):
                 ch_key = str(channel)
-                data["output_channels"][ch_key] = {
-                    "name": values.get(PATH_CHANNEL_NAME.format(channel=channel), f"Output {channel + 1}"),
-                    "enable": values.get(PATH_CHANNEL_ENABLE.format(channel=channel), True),
-                    "gain": values.get(PATH_CHANNEL_GAIN.format(channel=channel), 1.0),
-                    "mute": values.get(PATH_CHANNEL_MUTE.format(channel=channel), False),
-                    "polarity": values.get(PATH_CHANNEL_POLARITY.format(channel=channel), False),
-                    "delay_enable": values.get(PATH_CHANNEL_OUT_DELAY_ENABLE.format(channel=channel), False),
-                    "delay": values.get(PATH_CHANNEL_OUT_DELAY_VALUE.format(channel=channel), 0.0),
-                    "iir": {},
-                    "pre_iir": {},
-                }
+
+                # Initialize channel if it doesn't exist
+                if ch_key not in data["output_channels"]:
+                    data["output_channels"][ch_key] = {
+                        "name": f"Output {channel + 1}",
+                        "enable": True,
+                        "gain": 1.0,
+                        "mute": False,
+                        "polarity": False,
+                        "delay_enable": False,
+                        "delay": 0.0,
+                        "iir": {},
+                        "pre_iir": {},
+                    }
+
+                # Update only values that were fetched in this batch
+                path = PATH_CHANNEL_NAME.format(channel=channel)
+                if path in values:
+                    data["output_channels"][ch_key]["name"] = values[path]
+                path = PATH_CHANNEL_ENABLE.format(channel=channel)
+                if path in values:
+                    data["output_channels"][ch_key]["enable"] = values[path]
+                path = PATH_CHANNEL_GAIN.format(channel=channel)
+                if path in values:
+                    data["output_channels"][ch_key]["gain"] = values[path]
+                path = PATH_CHANNEL_MUTE.format(channel=channel)
+                if path in values:
+                    data["output_channels"][ch_key]["mute"] = values[path]
+                path = PATH_CHANNEL_POLARITY.format(channel=channel)
+                if path in values:
+                    data["output_channels"][ch_key]["polarity"] = values[path]
+                path = PATH_CHANNEL_OUT_DELAY_ENABLE.format(channel=channel)
+                if path in values:
+                    data["output_channels"][ch_key]["delay_enable"] = values[path]
+                path = PATH_CHANNEL_OUT_DELAY_VALUE.format(channel=channel)
+                if path in values:
+                    data["output_channels"][ch_key]["delay"] = values[path]
 
                 # v0.4.0 - Output IIR EQ (8 bands)
+                # Only update bands that were fetched in this batch
                 for band in range(8):
                     band_key = str(band)
-                    data["output_channels"][ch_key]["iir"][band_key] = {
-                        "enable": values.get(PATH_OUTPUT_IIR_ENABLE.format(channel=channel, band=band), False),
-                        "type": values.get(PATH_OUTPUT_IIR_TYPE.format(channel=channel, band=band), 0),
-                        "fc": values.get(PATH_OUTPUT_IIR_FC.format(channel=channel, band=band), 1000.0),
-                        "gain": values.get(PATH_OUTPUT_IIR_GAIN.format(channel=channel, band=band), 1.0),
-                        "q": values.get(PATH_OUTPUT_IIR_Q.format(channel=channel, band=band), 1.0),
-                        "slope": values.get(PATH_OUTPUT_IIR_SLOPE.format(channel=channel, band=band), 12),
-                    }
 
-                # v0.4.0 - Pre-Output IIR EQ (8 bands)
+                    # Initialize band if it doesn't exist
+                    if band_key not in data["output_channels"][ch_key]["iir"]:
+                        data["output_channels"][ch_key]["iir"][band_key] = {
+                            "enable": False,
+                            "type": 0,
+                            "fc": 1000.0,
+                            "gain": 1.0,
+                            "q": 1.0,
+                            "slope": 12,
+                        }
+
+                    # Update only if fetched
+                    path = PATH_OUTPUT_IIR_ENABLE.format(channel=channel, band=band)
+                    if path in values:
+                        data["output_channels"][ch_key]["iir"][band_key]["enable"] = values[path]
+                    path = PATH_OUTPUT_IIR_TYPE.format(channel=channel, band=band)
+                    if path in values:
+                        data["output_channels"][ch_key]["iir"][band_key]["type"] = values[path]
+                    path = PATH_OUTPUT_IIR_FC.format(channel=channel, band=band)
+                    if path in values:
+                        data["output_channels"][ch_key]["iir"][band_key]["fc"] = values[path]
+                    path = PATH_OUTPUT_IIR_GAIN.format(channel=channel, band=band)
+                    if path in values:
+                        data["output_channels"][ch_key]["iir"][band_key]["gain"] = values[path]
+                    path = PATH_OUTPUT_IIR_Q.format(channel=channel, band=band)
+                    if path in values:
+                        data["output_channels"][ch_key]["iir"][band_key]["q"] = values[path]
+                    path = PATH_OUTPUT_IIR_SLOPE.format(channel=channel, band=band)
+                    if path in values:
+                        data["output_channels"][ch_key]["iir"][band_key]["slope"] = values[path]
+
+                # v0.4.0 - Pre-Output (Speaker) IIR EQ (8 bands)
+                # Only update bands that were fetched in this batch
                 for band in range(8):
                     band_key = str(band)
-                    data["output_channels"][ch_key]["pre_iir"][band_key] = {
-                        "enable": values.get(PATH_PRE_OUTPUT_IIR_ENABLE.format(channel=channel, band=band), False),
-                        "type": values.get(PATH_PRE_OUTPUT_IIR_TYPE.format(channel=channel, band=band), 0),
-                        "fc": values.get(PATH_PRE_OUTPUT_IIR_FC.format(channel=channel, band=band), 1000.0),
-                        "gain": values.get(PATH_PRE_OUTPUT_IIR_GAIN.format(channel=channel, band=band), 1.0),
-                        "q": values.get(PATH_PRE_OUTPUT_IIR_Q.format(channel=channel, band=band), 1.0),
-                        "slope": values.get(PATH_PRE_OUTPUT_IIR_SLOPE.format(channel=channel, band=band), 12),
-                    }
+
+                    # Initialize band if it doesn't exist
+                    if band_key not in data["output_channels"][ch_key]["pre_iir"]:
+                        data["output_channels"][ch_key]["pre_iir"][band_key] = {
+                            "enable": False,
+                            "type": 0,
+                            "fc": 1000.0,
+                            "gain": 1.0,
+                            "q": 1.0,
+                            "slope": 12,
+                        }
+
+                    # Update only if fetched
+                    path = PATH_PRE_OUTPUT_IIR_ENABLE.format(channel=channel, band=band)
+                    if path in values:
+                        data["output_channels"][ch_key]["pre_iir"][band_key]["enable"] = values[path]
+                    path = PATH_PRE_OUTPUT_IIR_TYPE.format(channel=channel, band=band)
+                    if path in values:
+                        data["output_channels"][ch_key]["pre_iir"][band_key]["type"] = values[path]
+                    path = PATH_PRE_OUTPUT_IIR_FC.format(channel=channel, band=band)
+                    if path in values:
+                        data["output_channels"][ch_key]["pre_iir"][band_key]["fc"] = values[path]
+                    path = PATH_PRE_OUTPUT_IIR_GAIN.format(channel=channel, band=band)
+                    if path in values:
+                        data["output_channels"][ch_key]["pre_iir"][band_key]["gain"] = values[path]
+                    path = PATH_PRE_OUTPUT_IIR_Q.format(channel=channel, band=band)
+                    if path in values:
+                        data["output_channels"][ch_key]["pre_iir"][band_key]["q"] = values[path]
+                    path = PATH_PRE_OUTPUT_IIR_SLOPE.format(channel=channel, band=band)
+                    if path in values:
+                        data["output_channels"][ch_key]["pre_iir"][band_key]["slope"] = values[path]
 
             # Parse input channels (use string keys for JSON compatibility)
             for channel in range(MAX_CHANNELS):
                 ch_key = str(channel)
-                data["input_channels"][ch_key] = {
-                    "enable": values.get(PATH_INPUT_ENABLE.format(channel=channel), True),
-                    "gain": values.get(PATH_INPUT_GAIN.format(channel=channel), 1.0),
-                    "mute": values.get(PATH_INPUT_MUTE.format(channel=channel), False),
-                    "polarity": values.get(PATH_INPUT_POLARITY.format(channel=channel), False),
-                    "shading_gain": values.get(PATH_INPUT_SHADING_GAIN.format(channel=channel), 1.0),
-                    "delay_enable": values.get(PATH_INPUT_DELAY_ENABLE.format(channel=channel), False),
-                    "delay": values.get(PATH_INPUT_DELAY_VALUE.format(channel=channel), 0.0),
-                    "iir": {},
-                }
+
+                # Initialize channel if it doesn't exist
+                if ch_key not in data["input_channels"]:
+                    data["input_channels"][ch_key] = {
+                        "enable": True,
+                        "gain": 1.0,
+                        "mute": False,
+                        "polarity": False,
+                        "shading_gain": 1.0,
+                        "delay_enable": False,
+                        "delay": 0.0,
+                        "iir": {},
+                    }
+
+                # Update only values that were fetched
+                path = PATH_INPUT_ENABLE.format(channel=channel)
+                if path in values:
+                    data["input_channels"][ch_key]["enable"] = values[path]
+                path = PATH_INPUT_GAIN.format(channel=channel)
+                if path in values:
+                    data["input_channels"][ch_key]["gain"] = values[path]
+                path = PATH_INPUT_MUTE.format(channel=channel)
+                if path in values:
+                    data["input_channels"][ch_key]["mute"] = values[path]
+                path = PATH_INPUT_POLARITY.format(channel=channel)
+                if path in values:
+                    data["input_channels"][ch_key]["polarity"] = values[path]
+                path = PATH_INPUT_SHADING_GAIN.format(channel=channel)
+                if path in values:
+                    data["input_channels"][ch_key]["shading_gain"] = values[path]
+                path = PATH_INPUT_DELAY_ENABLE.format(channel=channel)
+                if path in values:
+                    data["input_channels"][ch_key]["delay_enable"] = values[path]
+                path = PATH_INPUT_DELAY_VALUE.format(channel=channel)
+                if path in values:
+                    data["input_channels"][ch_key]["delay"] = values[path]
 
                 # v0.4.0 - Input IIR EQ (7 bands)
+                # Only update bands that were fetched in this batch
                 for band in range(7):
                     band_key = str(band)
-                    data["input_channels"][ch_key]["iir"][band_key] = {
-                        "enable": values.get(PATH_INPUT_ZONE_IIR_ENABLE.format(channel=channel, band=band), False),
-                        "type": values.get(PATH_INPUT_ZONE_IIR_TYPE.format(channel=channel, band=band), 0),
-                        "fc": values.get(PATH_INPUT_ZONE_IIR_FC.format(channel=channel, band=band), 1000.0),
-                        "gain": values.get(PATH_INPUT_ZONE_IIR_GAIN.format(channel=channel, band=band), 1.0),
-                        "q": values.get(PATH_INPUT_ZONE_IIR_Q.format(channel=channel, band=band), 1.0),
-                        "slope": values.get(PATH_INPUT_ZONE_IIR_SLOPE.format(channel=channel, band=band), 12),
-                    }
+
+                    # Initialize band if it doesn't exist
+                    if band_key not in data["input_channels"][ch_key]["iir"]:
+                        data["input_channels"][ch_key]["iir"][band_key] = {
+                            "enable": False,
+                            "type": 0,
+                            "fc": 1000.0,
+                            "gain": 1.0,
+                            "q": 1.0,
+                            "slope": 12,
+                        }
+
+                    # Update only if fetched
+                    path = PATH_INPUT_ZONE_IIR_ENABLE.format(channel=channel, band=band)
+                    if path in values:
+                        data["input_channels"][ch_key]["iir"][band_key]["enable"] = values[path]
+                    path = PATH_INPUT_ZONE_IIR_TYPE.format(channel=channel, band=band)
+                    if path in values:
+                        data["input_channels"][ch_key]["iir"][band_key]["type"] = values[path]
+                    path = PATH_INPUT_ZONE_IIR_FC.format(channel=channel, band=band)
+                    if path in values:
+                        data["input_channels"][ch_key]["iir"][band_key]["fc"] = values[path]
+                    path = PATH_INPUT_ZONE_IIR_GAIN.format(channel=channel, band=band)
+                    if path in values:
+                        data["input_channels"][ch_key]["iir"][band_key]["gain"] = values[path]
+                    path = PATH_INPUT_ZONE_IIR_Q.format(channel=channel, band=band)
+                    if path in values:
+                        data["input_channels"][ch_key]["iir"][band_key]["q"] = values[path]
+                    path = PATH_INPUT_ZONE_IIR_SLOPE.format(channel=channel, band=band)
+                    if path in values:
+                        data["input_channels"][ch_key]["iir"][band_key]["slope"] = values[path]
 
             # v0.4.0 - Parse limiters
             for channel in range(MAX_CHANNELS):
