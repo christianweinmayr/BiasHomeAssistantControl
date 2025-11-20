@@ -275,37 +275,47 @@ class BiasHTTPClient:
         # Read all values
         values = await self.read_values(paths)
 
+        # Helper to convert to boolean (handles int 0/1, strings, etc.)
+        def to_bool(value, default=False):
+            if isinstance(value, bool):
+                return value
+            if isinstance(value, int):
+                return bool(value)
+            if isinstance(value, str):
+                return value.lower() in ('true', '1', 'yes', 'on')
+            return default
+
         # Structure output channels data (use string keys for JSON compatibility)
         output_channels = {}
         for channel in range(4):
             output_channels[str(channel)] = {
                 "name": values.get(f"/Device/Audio/Presets/Live/OutputProcess/Channels/Channel-{channel}/Name", f"Output {channel + 1}"),
-                "enable": values.get(f"/Device/Audio/Presets/Live/OutputProcess/Channels/Channel-{channel}/Enable", True),
-                "gain": values.get(f"/Device/Audio/Presets/Live/OutputProcess/Channels/Channel-{channel}/Gain/Value", 1.0),
-                "mute": values.get(f"/Device/Audio/Presets/Live/OutputProcess/Channels/Channel-{channel}/Mute/Value", False),
-                "polarity": values.get(f"/Device/Audio/Presets/Live/OutputProcess/Channels/Channel-{channel}/OutPolarity/Value", False),
-                "delay_enable": values.get(f"/Device/Audio/Presets/Live/OutputProcess/Channels/Channel-{channel}/OutDelay/Enable", False),
-                "delay": values.get(f"/Device/Audio/Presets/Live/OutputProcess/Channels/Channel-{channel}/OutDelay/Value", 0.0),
+                "enable": to_bool(values.get(f"/Device/Audio/Presets/Live/OutputProcess/Channels/Channel-{channel}/Enable", True)),
+                "gain": float(values.get(f"/Device/Audio/Presets/Live/OutputProcess/Channels/Channel-{channel}/Gain/Value", 1.0)),
+                "mute": to_bool(values.get(f"/Device/Audio/Presets/Live/OutputProcess/Channels/Channel-{channel}/Mute/Value", False)),
+                "polarity": to_bool(values.get(f"/Device/Audio/Presets/Live/OutputProcess/Channels/Channel-{channel}/OutPolarity/Value", False)),
+                "delay_enable": to_bool(values.get(f"/Device/Audio/Presets/Live/OutputProcess/Channels/Channel-{channel}/OutDelay/Enable", False)),
+                "delay": float(values.get(f"/Device/Audio/Presets/Live/OutputProcess/Channels/Channel-{channel}/OutDelay/Value", 0.0)),
             }
 
         # Structure input channels data (use string keys for JSON compatibility)
         input_channels = {}
         for channel in range(4):
             input_channels[str(channel)] = {
-                "enable": values.get(f"/Device/Audio/Presets/Live/InputProcess/Channels/Channel-{channel}/Enable/Value", True),
-                "gain": values.get(f"/Device/Audio/Presets/Live/InputProcess/Channels/Channel-{channel}/Gain/Value", 1.0),
-                "mute": values.get(f"/Device/Audio/Presets/Live/InputProcess/Channels/Channel-{channel}/Mute/Value", False),
-                "polarity": values.get(f"/Device/Audio/Presets/Live/InputProcess/Channels/Channel-{channel}/InPolarity/Value", False),
-                "shading_gain": values.get(f"/Device/Audio/Presets/Live/InputProcess/Channels/Channel-{channel}/ShadingGain/Value", 1.0),
-                "delay_enable": values.get(f"/Device/Audio/Presets/Live/InputProcess/Channels/Channel-{channel}/InDelay/Enable/Value", False),
-                "delay": values.get(f"/Device/Audio/Presets/Live/InputProcess/Channels/Channel-{channel}/InDelay/Value", 0.0),
+                "enable": to_bool(values.get(f"/Device/Audio/Presets/Live/InputProcess/Channels/Channel-{channel}/Enable/Value", True)),
+                "gain": float(values.get(f"/Device/Audio/Presets/Live/InputProcess/Channels/Channel-{channel}/Gain/Value", 1.0)),
+                "mute": to_bool(values.get(f"/Device/Audio/Presets/Live/InputProcess/Channels/Channel-{channel}/Mute/Value", False)),
+                "polarity": to_bool(values.get(f"/Device/Audio/Presets/Live/InputProcess/Channels/Channel-{channel}/InPolarity/Value", False)),
+                "shading_gain": float(values.get(f"/Device/Audio/Presets/Live/InputProcess/Channels/Channel-{channel}/ShadingGain/Value", 1.0)),
+                "delay_enable": to_bool(values.get(f"/Device/Audio/Presets/Live/InputProcess/Channels/Channel-{channel}/InDelay/Enable/Value", False)),
+                "delay": float(values.get(f"/Device/Audio/Presets/Live/InputProcess/Channels/Channel-{channel}/InDelay/Value", 0.0)),
             }
 
         # Build comprehensive preset configuration
         preset_config = {
             "output_channels": output_channels,
             "input_channels": input_channels,
-            "standby": values.get("/Device/Audio/Presets/Live/Generals/Standby/Value", False),
+            "standby": to_bool(values.get("/Device/Audio/Presets/Live/Generals/Standby/Value", False)),
         }
 
         _LOGGER.info("Captured state: 4 output channels + 4 input channels (comprehensive)")
