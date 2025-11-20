@@ -177,10 +177,10 @@ PATH_NOMINAL_IMPEDANCE_ENABLE: Final = "/Device/Audio/Presets/Live/OutputProcess
 # API PATH TEMPLATES - Input Matrix (Mixer)
 # =============================================================================
 
-PATH_MATRIX_IN_GAIN: Final = "/Device/Audio/Presets/Live/InputMatrix/InGain-{input}/Value"
-PATH_MATRIX_IN_MUTE: Final = "/Device/Audio/Presets/Live/InputMatrix/InMute-{input}/Value"
-PATH_MATRIX_CHANNEL_GAIN: Final = "/Device/Audio/Presets/Live/InputMatrix/Channels/Channel-{channel}/Gain-{input}/Value"
-PATH_MATRIX_CHANNEL_MUTE: Final = "/Device/Audio/Presets/Live/InputMatrix/Channels/Channel-{channel}/Mute-{input}/Value"
+PATH_MATRIX_IN_GAIN: Final = "/Device/Audio/Presets/Live/InputProcess/Matrix/Inputs/Input-{input}/Gain/Value"
+PATH_MATRIX_IN_MUTE: Final = "/Device/Audio/Presets/Live/InputProcess/Matrix/Inputs/Input-{input}/Mute/Value"
+PATH_MATRIX_CHANNEL_GAIN: Final = "/Device/Audio/Presets/Live/InputProcess/Matrix/Channels/Channel-{channel}/Routing/Input-{input}/Gain/Value"
+PATH_MATRIX_CHANNEL_MUTE: Final = "/Device/Audio/Presets/Live/InputProcess/Matrix/Channels/Channel-{channel}/Routing/Input-{input}/Mute/Value"
 
 # =============================================================================
 # API PATH TEMPLATES - Source Selection & Routing
