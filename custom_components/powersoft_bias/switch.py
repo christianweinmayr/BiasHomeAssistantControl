@@ -675,7 +675,7 @@ class BiasPreOutputIIREnable(CoordinatorEntity[BiasDataUpdateCoordinator], Switc
         self._channel = channel
         self._band = band
         self._attr_unique_id = f"{entry.entry_id}_pre_output_{channel}_iir_{band}_enable"
-        self._attr_name = f"Pre-Output {channel + 1} EQ Band {band + 1} Enable"
+        self._attr_name = f"Speaker {channel + 1} EQ Band {band + 1} Enable"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry.entry_id)},
             name=entry.title,

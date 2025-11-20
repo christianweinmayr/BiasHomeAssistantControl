@@ -149,7 +149,7 @@ class BiasPreOutputIIRTypeSelect(CoordinatorEntity[BiasDataUpdateCoordinator], S
         self._channel = channel
         self._band = band
         self._attr_unique_id = f"{entry.entry_id}_pre_output_{channel}_iir_{band}_type"
-        self._attr_name = f"Pre-Output {channel + 1} EQ Band {band + 1} Type"
+        self._attr_name = f"Speaker {channel + 1} EQ Band {band + 1} Type"
         self._attr_options = list(EQ_FILTER_TYPES.values())
 
         self._attr_device_info = DeviceInfo(

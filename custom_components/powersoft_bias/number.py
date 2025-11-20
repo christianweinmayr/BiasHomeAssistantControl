@@ -677,7 +677,7 @@ class BiasPreOutputIIRFrequency(BiasOutputIIRFrequency):
     def __init__(self, coordinator, entry, channel: int, band: int) -> None:
         super().__init__(coordinator, entry, channel, band)
         self._attr_unique_id = f"{entry.entry_id}_pre_output_{channel}_iir_{band}_fc"
-        self._attr_name = f"Pre-Output {channel + 1} EQ Band {band + 1} Frequency"
+        self._attr_name = f"Speaker {channel + 1} EQ Band {band + 1} Frequency"
 
     @property
     def native_value(self) -> float | None:
@@ -711,7 +711,7 @@ class BiasPreOutputIIRGain(BiasOutputIIRGain):
     def __init__(self, coordinator, entry, channel: int, band: int) -> None:
         super().__init__(coordinator, entry, channel, band)
         self._attr_unique_id = f"{entry.entry_id}_pre_output_{channel}_iir_{band}_gain"
-        self._attr_name = f"Pre-Output {channel + 1} EQ Band {band + 1} Gain"
+        self._attr_name = f"Speaker {channel + 1} EQ Band {band + 1} Gain"
 
     @property
     def native_value(self) -> float | None:
@@ -748,7 +748,7 @@ class BiasPreOutputIIRQ(BiasOutputIIRQ):
     def __init__(self, coordinator, entry, channel: int, band: int) -> None:
         super().__init__(coordinator, entry, channel, band)
         self._attr_unique_id = f"{entry.entry_id}_pre_output_{channel}_iir_{band}_q"
-        self._attr_name = f"Pre-Output {channel + 1} EQ Band {band + 1} Q"
+        self._attr_name = f"Speaker {channel + 1} EQ Band {band + 1} Q"
 
     @property
     def native_value(self) -> float | None:
