@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import math
 from typing import Any
 
 from homeassistant.components.number import NumberEntity, NumberMode
@@ -27,29 +28,37 @@ from .const import (
 _LOGGER = logging.getLogger(__name__)
 
 # Gain conversion constants
-# The amplifier's linear range 0.0-2.0 maps to -60dB to +15dB
+# The amplifier's linear range 0.0-2.0 maps logarithmically to dB
+# Formula: dB = 20 * log10(linear)
+# linear 1.0 = 0 dB (unity gain)
+# linear 2.0 = +6.02 dB (double amplitude)
+# linear 0.001 = -60 dB (practical minimum)
 GAIN_DB_MIN = -60.0
-GAIN_DB_MAX = 15.0
-GAIN_LINEAR_MIN = 0.0
+GAIN_DB_MAX = 6.0
+GAIN_LINEAR_MIN = 0.001  # Avoid log(0), represents -60 dB
 GAIN_LINEAR_MAX = 2.0
 
 
 def linear_to_db(linear: float) -> float:
-    """Convert linear gain (0.0-2.0) to dB (-60 to +15)."""
+    """Convert linear gain (0.0-2.0) to dB (-60 to +6).
+
+    Uses logarithmic conversion: dB = 20 * log10(linear)
+    """
     if linear <= GAIN_LINEAR_MIN:
         return GAIN_DB_MIN
-    # Linear mapping: dB = -60 + (linear / 2.0) * 75
-    db = GAIN_DB_MIN + (linear / GAIN_LINEAR_MAX) * (GAIN_DB_MAX - GAIN_DB_MIN)
+    db = 20 * math.log10(linear)
     return max(GAIN_DB_MIN, min(GAIN_DB_MAX, db))
 
 
 def db_to_linear(db: float) -> float:
-    """Convert dB (-60 to +15) to linear gain (0.0-2.0)."""
+    """Convert dB (-60 to +6) to linear gain (0.0-2.0).
+
+    Uses inverse logarithmic conversion: linear = 10^(dB/20)
+    """
     if db <= GAIN_DB_MIN:
         return GAIN_LINEAR_MIN
-    # Inverse mapping: linear = ((dB + 60) / 75) * 2.0
-    linear = ((db - GAIN_DB_MIN) / (GAIN_DB_MAX - GAIN_DB_MIN)) * GAIN_LINEAR_MAX
-    return max(GAIN_LINEAR_MIN, min(GAIN_LINEAR_MAX, linear))
+    linear = math.pow(10, db / 20)
+    return max(0.0, min(GAIN_LINEAR_MAX, linear))
 
 
 async def async_setup_entry(

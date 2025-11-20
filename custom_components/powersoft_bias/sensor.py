@@ -16,6 +16,7 @@ from .const import (
     COORDINATOR,
     DOMAIN,
     MANUFACTURER,
+    MAX_CHANNELS,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -36,6 +37,12 @@ async def async_setup_entry(
     entities.append(BiasFirmwareVersionSensor(coordinator, entry))
     entities.append(BiasModelNameSensor(coordinator, entry))
     entities.append(BiasSerialNumberSensor(coordinator, entry))
+
+    # Debug sensors - raw gain values
+    for channel in range(MAX_CHANNELS):
+        entities.append(BiasOutputGainRawSensor(coordinator, entry, channel))
+        entities.append(BiasInputGainRawSensor(coordinator, entry, channel))
+        entities.append(BiasInputShadingGainRawSensor(coordinator, entry, channel))
 
     async_add_entities(entities)
 
@@ -168,4 +175,107 @@ class BiasSerialNumberSensor(CoordinatorEntity[BiasDataUpdateCoordinator], Senso
         """Return the serial number."""
         if self.coordinator.data:
             return self.coordinator.data.get("device_info", {}).get("serial_number")
+        return None
+
+
+# =============================================================================
+# Debug Sensors - Raw Gain Values
+# =============================================================================
+
+class BiasOutputGainRawSensor(CoordinatorEntity[BiasDataUpdateCoordinator], SensorEntity):
+    """Debug sensor showing raw linear output gain value."""
+
+    _attr_icon = "mdi:bug"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(
+        self,
+        coordinator: BiasDataUpdateCoordinator,
+        entry: ConfigEntry,
+        channel: int,
+    ) -> None:
+        """Initialize the debug sensor."""
+        super().__init__(coordinator)
+        self._channel = channel
+        self._attr_unique_id = f"{entry.entry_id}_output_{channel}_gain_raw"
+        self._attr_name = f"Output {channel + 1} Gain (Raw Linear)"
+
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, entry.entry_id)},
+            name=entry.title,
+            manufacturer=MANUFACTURER,
+            model="Bias Amplifier",
+        )
+
+    @property
+    def native_value(self) -> float | None:
+        """Return the raw linear gain value."""
+        if self.coordinator.data:
+            return self.coordinator.data.get("output_channels", {}).get(str(self._channel), {}).get("gain")
+        return None
+
+
+class BiasInputGainRawSensor(CoordinatorEntity[BiasDataUpdateCoordinator], SensorEntity):
+    """Debug sensor showing raw linear input gain value."""
+
+    _attr_icon = "mdi:bug"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(
+        self,
+        coordinator: BiasDataUpdateCoordinator,
+        entry: ConfigEntry,
+        channel: int,
+    ) -> None:
+        """Initialize the debug sensor."""
+        super().__init__(coordinator)
+        self._channel = channel
+        self._attr_unique_id = f"{entry.entry_id}_input_{channel}_gain_raw"
+        self._attr_name = f"Input {channel + 1} Gain (Raw Linear)"
+
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, entry.entry_id)},
+            name=entry.title,
+            manufacturer=MANUFACTURER,
+            model="Bias Amplifier",
+        )
+
+    @property
+    def native_value(self) -> float | None:
+        """Return the raw linear gain value."""
+        if self.coordinator.data:
+            return self.coordinator.data.get("input_channels", {}).get(str(self._channel), {}).get("gain")
+        return None
+
+
+class BiasInputShadingGainRawSensor(CoordinatorEntity[BiasDataUpdateCoordinator], SensorEntity):
+    """Debug sensor showing raw linear input shading gain value."""
+
+    _attr_icon = "mdi:bug"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(
+        self,
+        coordinator: BiasDataUpdateCoordinator,
+        entry: ConfigEntry,
+        channel: int,
+    ) -> None:
+        """Initialize the debug sensor."""
+        super().__init__(coordinator)
+        self._channel = channel
+        self._attr_unique_id = f"{entry.entry_id}_input_{channel}_shading_gain_raw"
+        self._attr_name = f"Input {channel + 1} Shading Gain (Raw Linear)"
+
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, entry.entry_id)},
+            name=entry.title,
+            manufacturer=MANUFACTURER,
+            model="Bias Amplifier",
+        )
+
+    @property
+    def native_value(self) -> float | None:
+        """Return the raw linear shading gain value."""
+        if self.coordinator.data:
+            return self.coordinator.data.get("input_channels", {}).get(str(self._channel), {}).get("shading_gain")
         return None
