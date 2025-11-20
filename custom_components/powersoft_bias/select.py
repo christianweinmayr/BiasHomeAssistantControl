@@ -7,7 +7,7 @@ from typing import Any
 from homeassistant.components.select import SelectEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity import DeviceInfo
+from homeassistant.helpers.entity import DeviceInfo, EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -61,6 +61,7 @@ class BiasOutputIIRTypeSelect(CoordinatorEntity[BiasDataUpdateCoordinator], Sele
     """Select entity for output IIR filter type."""
 
     _attr_icon = "mdi:waveform"
+    _attr_entity_category = EntityCategory.CONFIG
 
     def __init__(
         self,
@@ -134,6 +135,7 @@ class BiasPreOutputIIRTypeSelect(CoordinatorEntity[BiasDataUpdateCoordinator], S
     """Select entity for pre-output IIR filter type."""
 
     _attr_icon = "mdi:waveform"
+    _attr_entity_category = EntityCategory.CONFIG
 
     def __init__(
         self,
@@ -206,6 +208,7 @@ class BiasInputIIRTypeSelect(CoordinatorEntity[BiasDataUpdateCoordinator], Selec
     """Select entity for input IIR filter type."""
 
     _attr_icon = "mdi:waveform"
+    _attr_entity_category = EntityCategory.CONFIG
 
     def __init__(
         self,

@@ -7,7 +7,7 @@ from typing import Any
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity import DeviceInfo
+from homeassistant.helpers.entity import DeviceInfo, EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -180,6 +180,7 @@ class BiasOutputEnable(CoordinatorEntity[BiasDataUpdateCoordinator], SwitchEntit
     """Representation of a Bias output channel enable switch."""
 
     _attr_icon = "mdi:power"
+    _attr_entity_category = EntityCategory.CONFIG
 
     def __init__(
         self,
@@ -240,6 +241,7 @@ class BiasOutputPolarity(CoordinatorEntity[BiasDataUpdateCoordinator], SwitchEnt
     """Representation of a Bias output channel polarity (phase inversion) switch."""
 
     _attr_icon = "mdi:sine-wave"
+    _attr_entity_category = EntityCategory.CONFIG
 
     def __init__(
         self,
@@ -300,6 +302,7 @@ class BiasOutputDelayEnable(CoordinatorEntity[BiasDataUpdateCoordinator], Switch
     """Representation of a Bias output channel delay enable switch."""
 
     _attr_icon = "mdi:timer"
+    _attr_entity_category = EntityCategory.CONFIG
 
     def __init__(
         self,
@@ -424,6 +427,7 @@ class BiasInputEnable(CoordinatorEntity[BiasDataUpdateCoordinator], SwitchEntity
     """Representation of a Bias input channel enable switch."""
 
     _attr_icon = "mdi:power"
+    _attr_entity_category = EntityCategory.CONFIG
 
     def __init__(
         self,
@@ -484,6 +488,7 @@ class BiasInputPolarity(CoordinatorEntity[BiasDataUpdateCoordinator], SwitchEnti
     """Representation of a Bias input channel polarity (phase inversion) switch."""
 
     _attr_icon = "mdi:sine-wave"
+    _attr_entity_category = EntityCategory.CONFIG
 
     def __init__(
         self,
@@ -544,6 +549,7 @@ class BiasInputDelayEnable(CoordinatorEntity[BiasDataUpdateCoordinator], SwitchE
     """Representation of a Bias input channel delay enable switch."""
 
     _attr_icon = "mdi:timer"
+    _attr_entity_category = EntityCategory.CONFIG
 
     def __init__(
         self,
@@ -608,6 +614,7 @@ class BiasOutputIIREnable(CoordinatorEntity[BiasDataUpdateCoordinator], SwitchEn
     """Output IIR EQ band enable switch."""
 
     _attr_icon = "mdi:equalizer"
+    _attr_entity_category = EntityCategory.CONFIG
 
     def __init__(self, coordinator, entry, channel: int, band: int) -> None:
         super().__init__(coordinator)
@@ -661,6 +668,7 @@ class BiasPreOutputIIREnable(CoordinatorEntity[BiasDataUpdateCoordinator], Switc
     """Pre-Output IIR EQ band enable switch."""
 
     _attr_icon = "mdi:equalizer"
+    _attr_entity_category = EntityCategory.CONFIG
 
     def __init__(self, coordinator, entry, channel: int, band: int) -> None:
         super().__init__(coordinator)
@@ -714,6 +722,7 @@ class BiasInputIIREnable(CoordinatorEntity[BiasDataUpdateCoordinator], SwitchEnt
     """Input IIR EQ band enable switch."""
 
     _attr_icon = "mdi:equalizer"
+    _attr_entity_category = EntityCategory.CONFIG
 
     def __init__(self, coordinator, entry, channel: int, band: int) -> None:
         super().__init__(coordinator)
@@ -771,6 +780,7 @@ class BiasClipLimiterEnable(CoordinatorEntity[BiasDataUpdateCoordinator], Switch
     """Clip Limiter enable switch."""
 
     _attr_icon = "mdi:shield-half-full"
+    _attr_entity_category = EntityCategory.CONFIG
 
     def __init__(self, coordinator, entry, channel: int) -> None:
         super().__init__(coordinator)
@@ -1037,6 +1047,7 @@ class BiasCrossoverEnable(CoordinatorEntity[BiasDataUpdateCoordinator], SwitchEn
     """Crossover band enable switch."""
 
     _attr_icon = "mdi:waveform"
+    _attr_entity_category = EntityCategory.CONFIG
 
     def __init__(self, coordinator, entry, channel: int, band: int) -> None:
         super().__init__(coordinator)
@@ -1093,6 +1104,7 @@ class BiasMatrixInputMute(CoordinatorEntity[BiasDataUpdateCoordinator], SwitchEn
     """Matrix mixer input mute switch."""
 
     _attr_icon = "mdi:volume-mute"
+    _attr_entity_category = EntityCategory.CONFIG
 
     def __init__(self, coordinator, entry, input_ch: int) -> None:
         super().__init__(coordinator)
@@ -1140,6 +1152,7 @@ class BiasMatrixChannelMute(CoordinatorEntity[BiasDataUpdateCoordinator], Switch
     """Matrix mixer channel routing mute switch."""
 
     _attr_icon = "mdi:volume-mute"
+    _attr_entity_category = EntityCategory.CONFIG
 
     def __init__(self, coordinator, entry, channel: int, input_ch: int) -> None:
         super().__init__(coordinator)

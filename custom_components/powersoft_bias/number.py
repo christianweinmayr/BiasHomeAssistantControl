@@ -8,7 +8,7 @@ from typing import Any
 from homeassistant.components.number import NumberEntity, NumberMode
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity import DeviceInfo
+from homeassistant.helpers.entity import DeviceInfo, EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -257,6 +257,7 @@ class BiasOutputDelay(CoordinatorEntity[BiasDataUpdateCoordinator], NumberEntity
     _attr_native_step = 0.1
     _attr_native_unit_of_measurement = "ms"
     _attr_icon = "mdi:timer-outline"
+    _attr_entity_category = EntityCategory.CONFIG
 
     def __init__(
         self,
@@ -380,6 +381,7 @@ class BiasInputShadingGain(CoordinatorEntity[BiasDataUpdateCoordinator], NumberE
     _attr_native_step = 0.5
     _attr_native_unit_of_measurement = "dB"
     _attr_icon = "mdi:tune-vertical"
+    _attr_entity_category = EntityCategory.CONFIG
 
     def __init__(
         self,
@@ -442,6 +444,7 @@ class BiasInputDelay(CoordinatorEntity[BiasDataUpdateCoordinator], NumberEntity)
     _attr_native_step = 0.1
     _attr_native_unit_of_measurement = "ms"
     _attr_icon = "mdi:timer-outline"
+    _attr_entity_category = EntityCategory.CONFIG
 
     def __init__(
         self,
@@ -518,6 +521,7 @@ class BiasOutputIIRFrequency(CoordinatorEntity[BiasDataUpdateCoordinator], Numbe
     _attr_native_step = 1.0
     _attr_native_unit_of_measurement = "Hz"
     _attr_icon = "mdi:sine-wave"
+    _attr_entity_category = EntityCategory.CONFIG
 
     def __init__(self, coordinator, entry, channel: int, band: int) -> None:
         super().__init__(coordinator)
@@ -569,6 +573,7 @@ class BiasOutputIIRGain(CoordinatorEntity[BiasDataUpdateCoordinator], NumberEnti
     _attr_native_step = 0.1
     _attr_native_unit_of_measurement = "dB"
     _attr_icon = "mdi:tune-vertical"
+    _attr_entity_category = EntityCategory.CONFIG
 
     def __init__(self, coordinator, entry, channel: int, band: int) -> None:
         super().__init__(coordinator)
@@ -622,6 +627,7 @@ class BiasOutputIIRQ(CoordinatorEntity[BiasDataUpdateCoordinator], NumberEntity)
     _attr_native_max_value = 20.0
     _attr_native_step = 0.1
     _attr_icon = "mdi:sine-wave"
+    _attr_entity_category = EntityCategory.CONFIG
 
     def __init__(self, coordinator, entry, channel: int, band: int) -> None:
         super().__init__(coordinator)
@@ -891,6 +897,7 @@ class BiasClipLimiterThreshold(CoordinatorEntity[BiasDataUpdateCoordinator], Num
     _attr_native_step = 0.1
     _attr_native_unit_of_measurement = "dB"
     _attr_icon = "mdi:shield-half-full"
+    _attr_entity_category = EntityCategory.CONFIG
 
     def __init__(self, coordinator, entry, channel: int) -> None:
         super().__init__(coordinator)
@@ -1162,6 +1169,7 @@ class BiasCrossoverFrequency(CoordinatorEntity[BiasDataUpdateCoordinator], Numbe
     _attr_native_step = 1.0
     _attr_native_unit_of_measurement = "Hz"
     _attr_icon = "mdi:waveform"
+    _attr_entity_category = EntityCategory.CONFIG
 
     def __init__(self, coordinator, entry, channel: int, band: int) -> None:
         super().__init__(coordinator)
@@ -1213,6 +1221,7 @@ class BiasCrossoverSlope(CoordinatorEntity[BiasDataUpdateCoordinator], NumberEnt
     _attr_native_step = 6.0
     _attr_native_unit_of_measurement = "dB/oct"
     _attr_icon = "mdi:slope-uphill"
+    _attr_entity_category = EntityCategory.CONFIG
 
     def __init__(self, coordinator, entry, channel: int, band: int) -> None:
         super().__init__(coordinator)
@@ -1268,6 +1277,7 @@ class BiasMatrixInputGain(CoordinatorEntity[BiasDataUpdateCoordinator], NumberEn
     _attr_native_step = 0.5
     _attr_native_unit_of_measurement = "dB"
     _attr_icon = "mdi:volume-high"
+    _attr_entity_category = EntityCategory.CONFIG
 
     def __init__(self, coordinator, entry, input_ch: int) -> None:
         super().__init__(coordinator)
@@ -1317,6 +1327,7 @@ class BiasMatrixChannelGain(CoordinatorEntity[BiasDataUpdateCoordinator], Number
     _attr_native_step = 0.5
     _attr_native_unit_of_measurement = "dB"
     _attr_icon = "mdi:volume-high"
+    _attr_entity_category = EntityCategory.CONFIG
 
     def __init__(self, coordinator, entry, channel: int, input_ch: int) -> None:
         super().__init__(coordinator)
