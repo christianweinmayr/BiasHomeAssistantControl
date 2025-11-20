@@ -26,6 +26,31 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
+# Gain conversion constants
+# The amplifier's linear range 0.0-2.0 maps to -60dB to +15dB
+GAIN_DB_MIN = -60.0
+GAIN_DB_MAX = 15.0
+GAIN_LINEAR_MIN = 0.0
+GAIN_LINEAR_MAX = 2.0
+
+
+def linear_to_db(linear: float) -> float:
+    """Convert linear gain (0.0-2.0) to dB (-60 to +15)."""
+    if linear <= GAIN_LINEAR_MIN:
+        return GAIN_DB_MIN
+    # Linear mapping: dB = -60 + (linear / 2.0) * 75
+    db = GAIN_DB_MIN + (linear / GAIN_LINEAR_MAX) * (GAIN_DB_MAX - GAIN_DB_MIN)
+    return max(GAIN_DB_MIN, min(GAIN_DB_MAX, db))
+
+
+def db_to_linear(db: float) -> float:
+    """Convert dB (-60 to +15) to linear gain (0.0-2.0)."""
+    if db <= GAIN_DB_MIN:
+        return GAIN_LINEAR_MIN
+    # Inverse mapping: linear = ((dB + 60) / 75) * 2.0
+    linear = ((db - GAIN_DB_MIN) / (GAIN_DB_MAX - GAIN_DB_MIN)) * GAIN_LINEAR_MAX
+    return max(GAIN_LINEAR_MIN, min(GAIN_LINEAR_MAX, linear))
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -59,10 +84,10 @@ class BiasOutputGain(CoordinatorEntity[BiasDataUpdateCoordinator], NumberEntity)
     """Representation of a Bias output channel gain control."""
 
     _attr_mode = NumberMode.SLIDER
-    _attr_native_min_value = 0.0
-    _attr_native_max_value = 2.0
-    _attr_native_step = 0.01
-    _attr_native_unit_of_measurement = None
+    _attr_native_min_value = GAIN_DB_MIN
+    _attr_native_max_value = GAIN_DB_MAX
+    _attr_native_step = 0.5
+    _attr_native_unit_of_measurement = "dB"
     _attr_icon = "mdi:volume-high"
 
     def __init__(
@@ -86,17 +111,22 @@ class BiasOutputGain(CoordinatorEntity[BiasDataUpdateCoordinator], NumberEntity)
 
     @property
     def native_value(self) -> float | None:
-        """Return the current gain value."""
+        """Return the current gain value in dB."""
         if self.coordinator.data:
-            return self.coordinator.data.get("output_channels", {}).get(str(self._channel), {}).get("gain")
+            linear_gain = self.coordinator.data.get("output_channels", {}).get(str(self._channel), {}).get("gain")
+            if linear_gain is not None:
+                return round(linear_to_db(linear_gain), 1)
         return None
 
     async def async_set_native_value(self, value: float) -> None:
-        """Set new gain value."""
+        """Set new gain value from dB."""
         path = PATH_CHANNEL_GAIN.format(channel=self._channel)
 
+        # Convert dB to linear for API
+        linear_value = db_to_linear(value)
+
         try:
-            await self.coordinator.client.write_value(path, value)
+            await self.coordinator.client.write_value(path, linear_value)
 
             # Update coordinator data immediately
             if self.coordinator.data:
@@ -104,7 +134,7 @@ class BiasOutputGain(CoordinatorEntity[BiasDataUpdateCoordinator], NumberEntity)
                     self.coordinator.data["output_channels"] = {}
                 if str(self._channel) not in self.coordinator.data["output_channels"]:
                     self.coordinator.data["output_channels"][str(self._channel)] = {}
-                self.coordinator.data["output_channels"][str(self._channel)]["gain"] = value
+                self.coordinator.data["output_channels"][str(self._channel)]["gain"] = linear_value
                 self.async_write_ha_state()
 
         except Exception as err:
@@ -177,10 +207,10 @@ class BiasInputGain(CoordinatorEntity[BiasDataUpdateCoordinator], NumberEntity):
     """Representation of a Bias input channel gain control."""
 
     _attr_mode = NumberMode.SLIDER
-    _attr_native_min_value = 0.0
-    _attr_native_max_value = 2.0
-    _attr_native_step = 0.01
-    _attr_native_unit_of_measurement = None
+    _attr_native_min_value = GAIN_DB_MIN
+    _attr_native_max_value = GAIN_DB_MAX
+    _attr_native_step = 0.5
+    _attr_native_unit_of_measurement = "dB"
     _attr_icon = "mdi:volume-high"
 
     def __init__(
@@ -204,17 +234,22 @@ class BiasInputGain(CoordinatorEntity[BiasDataUpdateCoordinator], NumberEntity):
 
     @property
     def native_value(self) -> float | None:
-        """Return the current input gain value."""
+        """Return the current input gain value in dB."""
         if self.coordinator.data:
-            return self.coordinator.data.get("input_channels", {}).get(str(self._channel), {}).get("gain")
+            linear_gain = self.coordinator.data.get("input_channels", {}).get(str(self._channel), {}).get("gain")
+            if linear_gain is not None:
+                return round(linear_to_db(linear_gain), 1)
         return None
 
     async def async_set_native_value(self, value: float) -> None:
-        """Set new input gain value."""
+        """Set new input gain value from dB."""
         path = PATH_INPUT_GAIN.format(channel=self._channel)
 
+        # Convert dB to linear for API
+        linear_value = db_to_linear(value)
+
         try:
-            await self.coordinator.client.write_value(path, value)
+            await self.coordinator.client.write_value(path, linear_value)
 
             # Update coordinator data immediately
             if self.coordinator.data:
@@ -222,7 +257,7 @@ class BiasInputGain(CoordinatorEntity[BiasDataUpdateCoordinator], NumberEntity):
                     self.coordinator.data["input_channels"] = {}
                 if str(self._channel) not in self.coordinator.data["input_channels"]:
                     self.coordinator.data["input_channels"][str(self._channel)] = {}
-                self.coordinator.data["input_channels"][str(self._channel)]["gain"] = value
+                self.coordinator.data["input_channels"][str(self._channel)]["gain"] = linear_value
                 self.async_write_ha_state()
 
         except Exception as err:
@@ -234,10 +269,10 @@ class BiasInputShadingGain(CoordinatorEntity[BiasDataUpdateCoordinator], NumberE
     """Representation of a Bias input channel shading gain control."""
 
     _attr_mode = NumberMode.SLIDER
-    _attr_native_min_value = 0.0
-    _attr_native_max_value = 2.0
-    _attr_native_step = 0.01
-    _attr_native_unit_of_measurement = None
+    _attr_native_min_value = GAIN_DB_MIN
+    _attr_native_max_value = GAIN_DB_MAX
+    _attr_native_step = 0.5
+    _attr_native_unit_of_measurement = "dB"
     _attr_icon = "mdi:tune-vertical"
 
     def __init__(
@@ -261,17 +296,22 @@ class BiasInputShadingGain(CoordinatorEntity[BiasDataUpdateCoordinator], NumberE
 
     @property
     def native_value(self) -> float | None:
-        """Return the current shading gain value."""
+        """Return the current shading gain value in dB."""
         if self.coordinator.data:
-            return self.coordinator.data.get("input_channels", {}).get(str(self._channel), {}).get("shading_gain")
+            linear_gain = self.coordinator.data.get("input_channels", {}).get(str(self._channel), {}).get("shading_gain")
+            if linear_gain is not None:
+                return round(linear_to_db(linear_gain), 1)
         return None
 
     async def async_set_native_value(self, value: float) -> None:
-        """Set new shading gain value."""
+        """Set new shading gain value from dB."""
         path = PATH_INPUT_SHADING_GAIN.format(channel=self._channel)
 
+        # Convert dB to linear for API
+        linear_value = db_to_linear(value)
+
         try:
-            await self.coordinator.client.write_value(path, value)
+            await self.coordinator.client.write_value(path, linear_value)
 
             # Update coordinator data immediately
             if self.coordinator.data:
@@ -279,7 +319,7 @@ class BiasInputShadingGain(CoordinatorEntity[BiasDataUpdateCoordinator], NumberE
                     self.coordinator.data["input_channels"] = {}
                 if str(self._channel) not in self.coordinator.data["input_channels"]:
                     self.coordinator.data["input_channels"][str(self._channel)] = {}
-                self.coordinator.data["input_channels"][str(self._channel)]["shading_gain"] = value
+                self.coordinator.data["input_channels"][str(self._channel)]["shading_gain"] = linear_value
                 self.async_write_ha_state()
 
         except Exception as err:
