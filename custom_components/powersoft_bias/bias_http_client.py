@@ -6,6 +6,7 @@ This module provides an async client for communicating with these amplifiers.
 
 Protocol: POST /am with JSON payload
 """
+import asyncio
 import logging
 from typing import Any, Dict, List, Optional, Union
 import aiohttp
@@ -134,11 +135,20 @@ class BiasHTTPClient:
 
             return result
 
+        except asyncio.TimeoutError:
+            _LOGGER.error(
+                "Timeout reading %d paths from %s (timeout=%ds)",
+                len(paths), self.host, self.timeout
+            )
+            raise
         except aiohttp.ClientError as err:
             _LOGGER.error("HTTP request failed to %s: %s", self.host, err)
             raise
         except Exception as err:
-            _LOGGER.error("Failed to read values from %s: %s", self.host, err)
+            _LOGGER.error(
+                "Failed to read values from %s: %s (type: %s, paths: %d)",
+                self.host, err, type(err).__name__, len(paths)
+            )
             raise ValueError(f"Failed to parse response: {err}") from err
 
     async def write_value(

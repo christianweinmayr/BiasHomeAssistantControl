@@ -435,19 +435,17 @@ class BiasDataUpdateCoordinator(DataUpdateCoordinator):
                 paths.append(PATH_INPUT_DELAY_ENABLE.format(channel=channel))
                 paths.append(PATH_INPUT_DELAY_VALUE.format(channel=channel))
 
-            # v0.4.0 - DSP Parameters (Batched polling to avoid timeout)
-            # Fetch one batch of ~40-200 DSP parameters per update cycle
-            # All 6 batches rotate through, completing every 6 update cycles
-            dsp_batch = self._get_dsp_batch_paths(self._batch_index)
-            paths.extend(dsp_batch)
-            _LOGGER.debug(
-                "Fetching DSP parameter batch %d (%d paths)",
-                self._batch_index,
-                len(dsp_batch)
-            )
+            # v0.4.0 - DSP Parameters (TEMPORARILY DISABLED for debugging)
+            # dsp_batch = self._get_dsp_batch_paths(self._batch_index)
+            # paths.extend(dsp_batch)
+            # _LOGGER.debug(
+            #     "Fetching DSP parameter batch %d (%d paths)",
+            #     self._batch_index,
+            #     len(dsp_batch)
+            # )
+            # self._batch_index = (self._batch_index + 1) % 6
 
-            # Rotate to next batch (0-5)
-            self._batch_index = (self._batch_index + 1) % 6
+            _LOGGER.info("Total paths to fetch: %d", len(paths))
 
             # System parameters
             paths.append(PATH_STANDBY)
