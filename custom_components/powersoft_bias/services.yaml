@@ -1,0 +1,63 @@
+save_preset:
+  name: Save Preset
+  description: Save current amplifier state as a new preset
+  fields:
+    name:
+      name: Preset Name
+      description: Name for the new preset
+      required: true
+      example: "Evening Listening"
+      selector:
+        text:
+
+update_preset:
+  name: Update Preset
+  description: Update an existing preset with current amplifier state
+  fields:
+    scene_id:
+      name: Preset ID
+      description: ID of the preset to update
+      required: true
+      example: 1
+      selector:
+        number:
+          min: 1
+          max: 999
+          mode: box
+
+delete_preset:
+  name: Delete Preset
+  description: Delete a preset
+  fields:
+    scene_id:
+      name: Preset ID
+      description: ID of the preset to delete
+      required: true
+      example: 1
+      selector:
+        number:
+          min: 1
+          max: 999
+          mode: box
+
+rename_preset:
+  name: Rename Preset
+  description: Rename an existing preset
+  fields:
+    scene_id:
+      name: Preset ID
+      description: ID of the preset to rename
+      required: true
+      example: 1
+      selector:
+        number:
+          min: 1
+          max: 999
+          mode: box
+    name:
+      name: New Name
+      description: New name for the preset
+      required: true
+      example: "My Custom Preset"
+      selector:
+        text:

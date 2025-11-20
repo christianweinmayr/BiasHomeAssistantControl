@@ -14,6 +14,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from . import BiasDataUpdateCoordinator
 from .const import (
     CONF_HOST,
+    COORDINATOR,
     DOMAIN,
     MANUFACTURER,
     MAX_CHANNELS,
@@ -29,7 +30,7 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up Bias number entities."""
-    coordinator: BiasDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator: BiasDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id][COORDINATOR]
 
     entities = []
 

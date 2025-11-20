@@ -32,3 +32,15 @@ PATH_MANUFACTURER: Final = "/Device/Config/Hardware/Manufacturer"
 # Number of channels (Bias Q1.5+ = 4 channels)
 MAX_CHANNELS: Final = 4
 MAX_INPUTS: Final = 4
+
+# Data coordinator keys
+COORDINATOR: Final = "coordinator"
+CLIENT: Final = "client"
+SCENE_MANAGER: Final = "scene_manager"
+ACTIVE_SCENE_ID: Final = "active_scene_id"
+
+# Entity unique ID prefixes
+UID_SCENE: Final = "scene"
+
+# Default scenes (empty - users create their own)
+DEFAULT_SCENES: Final = []

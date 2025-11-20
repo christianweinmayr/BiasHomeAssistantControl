@@ -3,9 +3,9 @@
   "name": "Powersoft Bias Amplifiers",
   "codeowners": ["@christianweinmayr"],
   "config_flow": true,
-  "documentation": "https://github.com/christianweinmayr/MezzoHomeAssistantControl",
+  "documentation": "https://github.com/christianweinmayr/BiasHomeAssistantControl",
   "integration_type": "device",
   "iot_class": "local_polling",
   "requirements": ["aiohttp>=3.8.0"],
-  "version": "0.1.0"
+  "version": "0.2.0"
 }

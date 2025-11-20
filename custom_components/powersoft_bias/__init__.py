@@ -10,6 +10,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .bias_http_client import BiasHTTPClient
+from .scene_manager import SceneManager
 from .const import (
     CONF_HOST,
     CONF_PORT,
@@ -21,11 +22,15 @@ from .const import (
     MAX_CHANNELS,
     PATH_CHANNEL_GAIN,
     PATH_CHANNEL_MUTE,
+    COORDINATOR,
+    CLIENT,
+    SCENE_MANAGER,
+    ACTIVE_SCENE_ID,
 )
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS: list[Platform] = [Platform.NUMBER, Platform.SWITCH]
+PLATFORMS: list[Platform] = [Platform.NUMBER, Platform.SWITCH, Platform.BUTTON]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -52,9 +57,26 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Fetch initial data
     await coordinator.async_config_entry_first_refresh()
 
-    # Store coordinator
+    # Create and load scene manager
+    scene_manager = SceneManager(hass, entry.entry_id)
+    await scene_manager.async_load()
+    _LOGGER.info(
+        "Scene manager initialized: %d preset(s)",
+        scene_manager.get_custom_scene_count()
+    )
+
+    # Store coordinator, client, scene manager, and active scene tracking
     hass.data.setdefault(DOMAIN, {})
-    hass.data[DOMAIN][entry.entry_id] = coordinator
+    hass.data[DOMAIN][entry.entry_id] = {
+        COORDINATOR: coordinator,
+        CLIENT: client,
+        SCENE_MANAGER: scene_manager,
+        ACTIVE_SCENE_ID: None,  # Track currently active scene
+    }
+
+    # Register services (only once for the domain)
+    if not hass.services.has_service(DOMAIN, "save_preset"):
+        await async_register_services(hass)
 
     # Forward entry setup to platforms
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
@@ -66,11 +88,159 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
     # Unload platforms
     if unload_ok := await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
-        # Clean up coordinator
-        coordinator = hass.data[DOMAIN].pop(entry.entry_id)
-        await coordinator.client.disconnect()
+        # Clean up coordinator and client
+        data = hass.data[DOMAIN].pop(entry.entry_id)
+        client: BiasHTTPClient = data[CLIENT]
+        await client.disconnect()
 
     return unload_ok
+
+
+async def async_register_services(hass: HomeAssistant) -> None:
+    """Register integration services."""
+    import voluptuous as vol
+    from homeassistant.helpers import config_validation as cv
+
+    _LOGGER.info("Registering Powersoft Bias services")
+
+    async def handle_save_preset(call):
+        """Handle save_preset service call."""
+        name = call.data["name"]
+        _LOGGER.info("Service call: save_preset with name='%s'", name)
+
+        # Get the first available entry (services are domain-level, not per-entry)
+        entry_id = next(iter(hass.data[DOMAIN].keys()))
+        data = hass.data[DOMAIN][entry_id]
+        client: BiasHTTPClient = data[CLIENT]
+        scene_manager: SceneManager = data[SCENE_MANAGER]
+
+        try:
+            # Capture current amplifier state
+            config = await client.capture_current_state()
+
+            # Save as new scene
+            scene_id = await scene_manager.async_create_scene(name, config)
+
+            _LOGGER.info("Successfully created preset '%s' (ID: %d)", name, scene_id)
+
+            # Reload integration to refresh button entities
+            await hass.config_entries.async_reload(entry_id)
+
+        except Exception as err:
+            _LOGGER.error("Failed to save preset '%s': %s", name, err)
+            raise
+
+    async def handle_update_preset(call):
+        """Handle update_preset service call."""
+        scene_id = call.data["scene_id"]
+        _LOGGER.info("Service call: update_preset with scene_id=%d", scene_id)
+
+        # Get the first available entry
+        entry_id = next(iter(hass.data[DOMAIN].keys()))
+        data = hass.data[DOMAIN][entry_id]
+        client: BiasHTTPClient = data[CLIENT]
+        scene_manager: SceneManager = data[SCENE_MANAGER]
+
+        try:
+            # Capture current amplifier state
+            config = await client.capture_current_state()
+
+            # Update existing scene
+            await scene_manager.async_update_scene(scene_id, config)
+
+            _LOGGER.info("Successfully updated preset ID %d", scene_id)
+
+            # Reload integration to refresh button entities
+            await hass.config_entries.async_reload(entry_id)
+
+        except Exception as err:
+            _LOGGER.error("Failed to update preset %d: %s", scene_id, err)
+            raise
+
+    async def handle_delete_preset(call):
+        """Handle delete_preset service call."""
+        scene_id = call.data["scene_id"]
+        _LOGGER.info("Service call: delete_preset with scene_id=%d", scene_id)
+
+        # Get the first available entry
+        entry_id = next(iter(hass.data[DOMAIN].keys()))
+        data = hass.data[DOMAIN][entry_id]
+        scene_manager: SceneManager = data[SCENE_MANAGER]
+
+        try:
+            # Delete the scene
+            await scene_manager.async_delete_scene(scene_id)
+
+            _LOGGER.info("Successfully deleted preset ID %d", scene_id)
+
+            # Reload integration to refresh button entities
+            await hass.config_entries.async_reload(entry_id)
+
+        except Exception as err:
+            _LOGGER.error("Failed to delete preset %d: %s", scene_id, err)
+            raise
+
+    async def handle_rename_preset(call):
+        """Handle rename_preset service call."""
+        scene_id = call.data["scene_id"]
+        new_name = call.data["name"]
+        _LOGGER.info("Service call: rename_preset with scene_id=%d, name='%s'", scene_id, new_name)
+
+        # Get the first available entry
+        entry_id = next(iter(hass.data[DOMAIN].keys()))
+        data = hass.data[DOMAIN][entry_id]
+        scene_manager: SceneManager = data[SCENE_MANAGER]
+
+        try:
+            # Rename the scene
+            await scene_manager.async_rename_scene(scene_id, new_name)
+
+            _LOGGER.info("Successfully renamed preset ID %d", scene_id)
+
+            # Reload integration to refresh button names
+            await hass.config_entries.async_reload(entry_id)
+
+        except Exception as err:
+            _LOGGER.error("Failed to rename preset %d: %s", scene_id, err)
+            raise
+
+    # Register services
+    hass.services.async_register(
+        DOMAIN,
+        "save_preset",
+        handle_save_preset,
+        schema=vol.Schema({
+            vol.Required("name"): cv.string,
+        }),
+    )
+
+    hass.services.async_register(
+        DOMAIN,
+        "update_preset",
+        handle_update_preset,
+        schema=vol.Schema({
+            vol.Required("scene_id"): cv.positive_int,
+        }),
+    )
+
+    hass.services.async_register(
+        DOMAIN,
+        "delete_preset",
+        handle_delete_preset,
+        schema=vol.Schema({
+            vol.Required("scene_id"): cv.positive_int,
+        }),
+    )
+
+    hass.services.async_register(
+        DOMAIN,
+        "rename_preset",
+        handle_rename_preset,
+        schema=vol.Schema({
+            vol.Required("scene_id"): cv.positive_int,
+            vol.Required("name"): cv.string,
+        }),
+    )
 
 
 class BiasDataUpdateCoordinator(DataUpdateCoordinator):
