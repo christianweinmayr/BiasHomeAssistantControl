@@ -327,6 +327,87 @@ class BiasDataUpdateCoordinator(DataUpdateCoordinator):
             update_interval=update_interval,
         )
         self.client = client
+        self._batch_index = 0  # Track which DSP parameter batch to fetch
+
+    def _get_dsp_batch_paths(self, batch_index: int) -> list[str]:
+        """Get a batch of DSP parameter paths to reduce API load.
+
+        Returns one of 6 batches per call to avoid overwhelming the amplifier.
+        Each batch is fetched sequentially on coordinator updates.
+        """
+        paths = []
+
+        if batch_index == 0:
+            # Batch 0: Output IIR EQ (8 bands × 6 params × 4 channels = 192 paths)
+            for channel in range(MAX_CHANNELS):
+                for band in range(8):
+                    paths.append(PATH_OUTPUT_IIR_ENABLE.format(channel=channel, band=band))
+                    paths.append(PATH_OUTPUT_IIR_TYPE.format(channel=channel, band=band))
+                    paths.append(PATH_OUTPUT_IIR_FC.format(channel=channel, band=band))
+                    paths.append(PATH_OUTPUT_IIR_GAIN.format(channel=channel, band=band))
+                    paths.append(PATH_OUTPUT_IIR_Q.format(channel=channel, band=band))
+                    paths.append(PATH_OUTPUT_IIR_SLOPE.format(channel=channel, band=band))
+
+        elif batch_index == 1:
+            # Batch 1: Pre-Output IIR EQ (8 bands × 6 params × 4 channels = 192 paths)
+            for channel in range(MAX_CHANNELS):
+                for band in range(8):
+                    paths.append(PATH_PRE_OUTPUT_IIR_ENABLE.format(channel=channel, band=band))
+                    paths.append(PATH_PRE_OUTPUT_IIR_TYPE.format(channel=channel, band=band))
+                    paths.append(PATH_PRE_OUTPUT_IIR_FC.format(channel=channel, band=band))
+                    paths.append(PATH_PRE_OUTPUT_IIR_GAIN.format(channel=channel, band=band))
+                    paths.append(PATH_PRE_OUTPUT_IIR_Q.format(channel=channel, band=band))
+                    paths.append(PATH_PRE_OUTPUT_IIR_SLOPE.format(channel=channel, band=band))
+
+        elif batch_index == 2:
+            # Batch 2: Input IIR EQ (7 bands × 6 params × 4 channels = 168 paths)
+            for channel in range(MAX_CHANNELS):
+                for band in range(7):
+                    paths.append(PATH_INPUT_ZONE_IIR_ENABLE.format(channel=channel, band=band))
+                    paths.append(PATH_INPUT_ZONE_IIR_TYPE.format(channel=channel, band=band))
+                    paths.append(PATH_INPUT_ZONE_IIR_FC.format(channel=channel, band=band))
+                    paths.append(PATH_INPUT_ZONE_IIR_GAIN.format(channel=channel, band=band))
+                    paths.append(PATH_INPUT_ZONE_IIR_Q.format(channel=channel, band=band))
+                    paths.append(PATH_INPUT_ZONE_IIR_SLOPE.format(channel=channel, band=band))
+
+        elif batch_index == 3:
+            # Batch 3: Limiters (7 types × 2 params × 4 channels = 56 paths)
+            for channel in range(MAX_CHANNELS):
+                paths.append(PATH_LIMITER_CLIP_ENABLE.format(channel=channel))
+                paths.append(PATH_LIMITER_CLIP_THRESHOLD.format(channel=channel))
+                paths.append(PATH_LIMITER_PEAK_ENABLE.format(channel=channel))
+                paths.append(PATH_LIMITER_PEAK_THRESHOLD.format(channel=channel))
+                paths.append(PATH_LIMITER_VRMS_ENABLE.format(channel=channel))
+                paths.append(PATH_LIMITER_VRMS_THRESHOLD.format(channel=channel))
+                paths.append(PATH_LIMITER_IRMS_ENABLE.format(channel=channel))
+                paths.append(PATH_LIMITER_IRMS_THRESHOLD.format(channel=channel))
+                paths.append(PATH_LIMITER_CLAMP_ENABLE.format(channel=channel))
+                paths.append(PATH_LIMITER_CLAMP_THRESHOLD.format(channel=channel))
+                paths.append(PATH_LIMITER_THERMAL_ENABLE.format(channel=channel))
+                paths.append(PATH_LIMITER_THERMAL_THRESHOLD.format(channel=channel))
+                paths.append(PATH_LIMITER_TRUEPOWER_ENABLE.format(channel=channel))
+                paths.append(PATH_LIMITER_TRUEPOWER_THRESHOLD.format(channel=channel))
+
+        elif batch_index == 4:
+            # Batch 4: Crossovers (3 bands × 3 params × 4 channels = 36 paths)
+            for channel in range(MAX_CHANNELS):
+                for band in range(MAX_XOVER_BANDS):
+                    paths.append(PATH_XOVER_ENABLE.format(channel=channel, band=band))
+                    paths.append(PATH_XOVER_FC.format(channel=channel, band=band))
+                    paths.append(PATH_XOVER_SLOPE.format(channel=channel, band=band))
+
+        elif batch_index == 5:
+            # Batch 5: Matrix mixer (4 input gains/mutes + 16 routing gains/mutes = 40 paths)
+            for input_ch in range(MAX_CHANNELS):
+                paths.append(PATH_MATRIX_IN_GAIN.format(input=input_ch))
+                paths.append(PATH_MATRIX_IN_MUTE.format(input=input_ch))
+
+            for channel in range(MAX_CHANNELS):
+                for input_ch in range(MAX_CHANNELS):
+                    paths.append(PATH_MATRIX_CHANNEL_GAIN.format(channel=channel, input=input_ch))
+                    paths.append(PATH_MATRIX_CHANNEL_MUTE.format(channel=channel, input=input_ch))
+
+        return paths
 
     async def _async_update_data(self) -> dict:
         """Fetch data from API endpoint."""
@@ -354,73 +435,19 @@ class BiasDataUpdateCoordinator(DataUpdateCoordinator):
                 paths.append(PATH_INPUT_DELAY_ENABLE.format(channel=channel))
                 paths.append(PATH_INPUT_DELAY_VALUE.format(channel=channel))
 
-            # v0.4.0 - DSP Parameters (DISABLED due to timeout with ~700+ parameters)
-            # NOTE: DSP entities will still work via direct read/write, but values
-            # won't be polled/refreshed automatically by the coordinator.
-            # TODO: Implement on-demand fetching or split into batches
+            # v0.4.0 - DSP Parameters (Batched polling to avoid timeout)
+            # Fetch one batch of ~40-200 DSP parameters per update cycle
+            # All 6 batches rotate through, completing every 6 update cycles
+            dsp_batch = self._get_dsp_batch_paths(self._batch_index)
+            paths.extend(dsp_batch)
+            _LOGGER.debug(
+                "Fetching DSP parameter batch %d (%d paths)",
+                self._batch_index,
+                len(dsp_batch)
+            )
 
-            # # v0.4.0 - Output IIR EQ parameters (8 bands per channel)
-            # for channel in range(MAX_CHANNELS):
-            #     for band in range(8):
-            #         paths.append(PATH_OUTPUT_IIR_ENABLE.format(channel=channel, band=band))
-            #         paths.append(PATH_OUTPUT_IIR_TYPE.format(channel=channel, band=band))
-            #         paths.append(PATH_OUTPUT_IIR_FC.format(channel=channel, band=band))
-            #         paths.append(PATH_OUTPUT_IIR_GAIN.format(channel=channel, band=band))
-            #         paths.append(PATH_OUTPUT_IIR_Q.format(channel=channel, band=band))
-            #         paths.append(PATH_OUTPUT_IIR_SLOPE.format(channel=channel, band=band))
-
-            # # v0.4.0 - Pre-Output IIR EQ parameters (8 bands per channel)
-            # for channel in range(MAX_CHANNELS):
-            #     for band in range(8):
-            #         paths.append(PATH_PRE_OUTPUT_IIR_ENABLE.format(channel=channel, band=band))
-            #         paths.append(PATH_PRE_OUTPUT_IIR_TYPE.format(channel=channel, band=band))
-            #         paths.append(PATH_PRE_OUTPUT_IIR_FC.format(channel=channel, band=band))
-            #         paths.append(PATH_PRE_OUTPUT_IIR_GAIN.format(channel=channel, band=band))
-            #         paths.append(PATH_PRE_OUTPUT_IIR_Q.format(channel=channel, band=band))
-            #         paths.append(PATH_PRE_OUTPUT_IIR_SLOPE.format(channel=channel, band=band))
-
-            # # v0.4.0 - Input IIR EQ parameters (7 bands per channel)
-            # for channel in range(MAX_CHANNELS):
-            #     for band in range(7):
-            #         paths.append(PATH_INPUT_ZONE_IIR_ENABLE.format(channel=channel, band=band))
-            #         paths.append(PATH_INPUT_ZONE_IIR_TYPE.format(channel=channel, band=band))
-            #         paths.append(PATH_INPUT_ZONE_IIR_FC.format(channel=channel, band=band))
-            #         paths.append(PATH_INPUT_ZONE_IIR_GAIN.format(channel=channel, band=band))
-            #         paths.append(PATH_INPUT_ZONE_IIR_Q.format(channel=channel, band=band))
-            #         paths.append(PATH_INPUT_ZONE_IIR_SLOPE.format(channel=channel, band=band))
-
-            # # v0.4.0 - Limiter parameters (7 types per channel)
-            # for channel in range(MAX_CHANNELS):
-            #     paths.append(PATH_LIMITER_CLIP_ENABLE.format(channel=channel))
-            #     paths.append(PATH_LIMITER_CLIP_THRESHOLD.format(channel=channel))
-            #     paths.append(PATH_LIMITER_PEAK_ENABLE.format(channel=channel))
-            #     paths.append(PATH_LIMITER_PEAK_THRESHOLD.format(channel=channel))
-            #     paths.append(PATH_LIMITER_VRMS_ENABLE.format(channel=channel))
-            #     paths.append(PATH_LIMITER_VRMS_THRESHOLD.format(channel=channel))
-            #     paths.append(PATH_LIMITER_IRMS_ENABLE.format(channel=channel))
-            #     paths.append(PATH_LIMITER_IRMS_THRESHOLD.format(channel=channel))
-            #     paths.append(PATH_LIMITER_CLAMP_ENABLE.format(channel=channel))
-            #     paths.append(PATH_LIMITER_CLAMP_THRESHOLD.format(channel=channel))
-            #     paths.append(PATH_LIMITER_THERMAL_ENABLE.format(channel=channel))
-            #     paths.append(PATH_LIMITER_THERMAL_THRESHOLD.format(channel=channel))
-            #     paths.append(PATH_LIMITER_TRUEPOWER_ENABLE.format(channel=channel))
-            #     paths.append(PATH_LIMITER_TRUEPOWER_THRESHOLD.format(channel=channel))
-
-            # # v0.4.0 - Crossover parameters (2 bands per channel)
-            # for channel in range(MAX_CHANNELS):
-            #     for band in range(MAX_XOVER_BANDS):
-            #         paths.append(PATH_XOVER_ENABLE.format(channel=channel, band=band))
-            #         paths.append(PATH_XOVER_FC.format(channel=channel, band=band))
-            #         paths.append(PATH_XOVER_SLOPE.format(channel=channel, band=band))
-
-            # # v0.4.0 - Matrix mixer parameters (4×4 matrix)
-            # for input_ch in range(MAX_CHANNELS):
-            #     paths.append(PATH_MATRIX_IN_GAIN.format(input=input_ch))
-            #     paths.append(PATH_MATRIX_IN_MUTE.format(input=input_ch))
-            # for channel in range(MAX_CHANNELS):
-            #     for input_ch in range(MAX_CHANNELS):
-            #         paths.append(PATH_MATRIX_CHANNEL_GAIN.format(channel=channel, input=input_ch))
-            #         paths.append(PATH_MATRIX_CHANNEL_MUTE.format(channel=channel, input=input_ch))
+            # Rotate to next batch (0-5)
+            self._batch_index = (self._batch_index + 1) % 6
 
             # System parameters
             paths.append(PATH_STANDBY)
