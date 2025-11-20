@@ -84,8 +84,8 @@ from .const import (
     PATH_XOVER_FC,
     PATH_XOVER_SLOPE,
     # v0.4.0 - Matrix paths
-    PATH_MATRIX_INPUT_GAIN,
-    PATH_MATRIX_INPUT_MUTE,
+    PATH_MATRIX_IN_GAIN,
+    PATH_MATRIX_IN_MUTE,
     PATH_MATRIX_CHANNEL_GAIN,
     PATH_MATRIX_CHANNEL_MUTE,
     # Coordinator keys
@@ -410,8 +410,8 @@ class BiasDataUpdateCoordinator(DataUpdateCoordinator):
 
             # v0.4.0 - Matrix mixer parameters (4×4 matrix)
             for input_ch in range(MAX_CHANNELS):
-                paths.append(PATH_MATRIX_INPUT_GAIN.format(input=input_ch))
-                paths.append(PATH_MATRIX_INPUT_MUTE.format(input=input_ch))
+                paths.append(PATH_MATRIX_IN_GAIN.format(input=input_ch))
+                paths.append(PATH_MATRIX_IN_MUTE.format(input=input_ch))
             for channel in range(MAX_CHANNELS):
                 for input_ch in range(MAX_CHANNELS):
                     paths.append(PATH_MATRIX_CHANNEL_GAIN.format(channel=channel, input=input_ch))
@@ -552,8 +552,8 @@ class BiasDataUpdateCoordinator(DataUpdateCoordinator):
             for input_ch in range(MAX_CHANNELS):
                 in_key = str(input_ch)
                 data["matrix"]["inputs"][in_key] = {
-                    "gain": values.get(PATH_MATRIX_INPUT_GAIN.format(input=input_ch), 1.0),
-                    "mute": values.get(PATH_MATRIX_INPUT_MUTE.format(input=input_ch), False),
+                    "gain": values.get(PATH_MATRIX_IN_GAIN.format(input=input_ch), 1.0),
+                    "mute": values.get(PATH_MATRIX_IN_MUTE.format(input=input_ch), False),
                 }
 
             for channel in range(MAX_CHANNELS):
