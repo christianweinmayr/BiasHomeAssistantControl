@@ -170,6 +170,53 @@ async def async_register_services(hass: HomeAssistant) -> None:
 
     _LOGGER.info("Registering Powersoft Bias services")
 
+    def _normalize_bool(value):
+        """Convert various boolean representations to actual bool."""
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, int):
+            return bool(value)
+        if isinstance(value, str):
+            return value.lower() in ('true', '1', 'yes', 'on')
+        return bool(value)
+
+    def _normalize_preset_data(data: dict) -> dict:
+        """Normalize coordinator data types for preset validation."""
+        if not data:
+            return data
+
+        normalized = data.copy()
+
+        # Normalize output channels
+        if "output_channels" in normalized:
+            for ch_key, ch_config in normalized["output_channels"].items():
+                if "enable" in ch_config:
+                    ch_config["enable"] = _normalize_bool(ch_config["enable"])
+                if "mute" in ch_config:
+                    ch_config["mute"] = _normalize_bool(ch_config["mute"])
+                if "polarity" in ch_config:
+                    ch_config["polarity"] = _normalize_bool(ch_config["polarity"])
+                if "delay_enable" in ch_config:
+                    ch_config["delay_enable"] = _normalize_bool(ch_config["delay_enable"])
+
+        # Normalize input channels
+        if "input_channels" in normalized:
+            for ch_key, ch_config in normalized["input_channels"].items():
+                if "enable" in ch_config:
+                    ch_config["enable"] = _normalize_bool(ch_config["enable"])
+                if "mute" in ch_config:
+                    ch_config["mute"] = _normalize_bool(ch_config["mute"])
+                if "polarity" in ch_config:
+                    ch_config["polarity"] = _normalize_bool(ch_config["polarity"])
+                if "delay_enable" in ch_config:
+                    ch_config["delay_enable"] = _normalize_bool(ch_config["delay_enable"])
+
+        # Normalize standby
+        if "standby" in normalized:
+            normalized["standby"] = _normalize_bool(normalized["standby"])
+
+        return normalized
+
     async def handle_save_preset(call):
         """Handle save_preset service call."""
         name = call.data["name"]
@@ -184,7 +231,10 @@ async def async_register_services(hass: HomeAssistant) -> None:
         try:
             # Use coordinator data instead of querying amplifier
             # This avoids timeout issues with 729 path requests
-            config = coordinator.data.copy() if coordinator.data else {}
+            raw_config = coordinator.data.copy() if coordinator.data else {}
+
+            # Normalize data types for preset validation
+            config = _normalize_preset_data(raw_config)
 
             # Save as new scene
             scene_id = await scene_manager.async_create_scene(name, config)
@@ -212,7 +262,10 @@ async def async_register_services(hass: HomeAssistant) -> None:
         try:
             # Use coordinator data instead of querying amplifier
             # This avoids timeout issues with 729 path requests
-            config = coordinator.data.copy() if coordinator.data else {}
+            raw_config = coordinator.data.copy() if coordinator.data else {}
+
+            # Normalize data types for preset validation
+            config = _normalize_preset_data(raw_config)
 
             # Update existing scene
             await scene_manager.async_update_scene(scene_id, config)

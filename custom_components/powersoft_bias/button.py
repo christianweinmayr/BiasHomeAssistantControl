@@ -295,6 +295,53 @@ class BiasCreateSceneButton(CoordinatorEntity, ButtonEntity):
         self._attr_unique_id = f"{entry.entry_id}_create_scene"
         self._attr_name = "Preset - Create New"
 
+    def _normalize_bool(self, value):
+        """Convert various boolean representations to actual bool."""
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, int):
+            return bool(value)
+        if isinstance(value, str):
+            return value.lower() in ('true', '1', 'yes', 'on')
+        return bool(value)
+
+    def _normalize_preset_data(self, data: dict) -> dict:
+        """Normalize coordinator data types for preset validation."""
+        if not data:
+            return data
+
+        normalized = data.copy()
+
+        # Normalize output channels
+        if "output_channels" in normalized:
+            for ch_key, ch_config in normalized["output_channels"].items():
+                if "enable" in ch_config:
+                    ch_config["enable"] = self._normalize_bool(ch_config["enable"])
+                if "mute" in ch_config:
+                    ch_config["mute"] = self._normalize_bool(ch_config["mute"])
+                if "polarity" in ch_config:
+                    ch_config["polarity"] = self._normalize_bool(ch_config["polarity"])
+                if "delay_enable" in ch_config:
+                    ch_config["delay_enable"] = self._normalize_bool(ch_config["delay_enable"])
+
+        # Normalize input channels
+        if "input_channels" in normalized:
+            for ch_key, ch_config in normalized["input_channels"].items():
+                if "enable" in ch_config:
+                    ch_config["enable"] = self._normalize_bool(ch_config["enable"])
+                if "mute" in ch_config:
+                    ch_config["mute"] = self._normalize_bool(ch_config["mute"])
+                if "polarity" in ch_config:
+                    ch_config["polarity"] = self._normalize_bool(ch_config["polarity"])
+                if "delay_enable" in ch_config:
+                    ch_config["delay_enable"] = self._normalize_bool(ch_config["delay_enable"])
+
+        # Normalize standby
+        if "standby" in normalized:
+            normalized["standby"] = self._normalize_bool(normalized["standby"])
+
+        return normalized
+
     async def async_press(self) -> None:
         """Handle button press - create new preset from current amp state."""
         try:
@@ -306,7 +353,10 @@ class BiasCreateSceneButton(CoordinatorEntity, ButtonEntity):
 
             # Use coordinator data instead of querying amplifier again
             # This avoids timeout issues with 729 path requests
-            config = self.coordinator.data.copy() if self.coordinator.data else {}
+            raw_config = self.coordinator.data.copy() if self.coordinator.data else {}
+
+            # Normalize data types for preset validation
+            config = self._normalize_preset_data(raw_config)
 
             # Create the scene
             scene_id = await self._scene_manager.async_create_scene(scene_name, config)
