@@ -1,10 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "Bash(curl:*)",
-      "Bash(ping:*)",
-      "Bash(python3:*)",
-      "Bash(cat:*)"
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []
