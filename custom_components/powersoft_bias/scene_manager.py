@@ -133,8 +133,8 @@ class SceneManager:
                 raise ValueError(f"Output channel {ch_idx} enable must be boolean")
 
             if "gain" in ch_config:
-                if not isinstance(ch_config["gain"], (int, float)) or not 0.0 <= ch_config["gain"] <= 2.0:
-                    raise ValueError(f"Output channel {ch_idx} gain must be between 0.0 and 2.0")
+                if not isinstance(ch_config["gain"], (int, float)) or not 0.0 <= ch_config["gain"] <= 10.0:
+                    raise ValueError(f"Output channel {ch_idx} gain must be between 0.0 and 10.0")
 
             if "mute" in ch_config and not isinstance(ch_config["mute"], bool):
                 raise ValueError(f"Output channel {ch_idx} mute must be boolean")
@@ -174,8 +174,8 @@ class SceneManager:
                     raise ValueError(f"Input channel {ch_idx} enable must be boolean")
 
                 if "gain" in ch_config:
-                    if not isinstance(ch_config["gain"], (int, float)) or not 0.0 <= ch_config["gain"] <= 2.0:
-                        raise ValueError(f"Input channel {ch_idx} gain must be between 0.0 and 2.0")
+                    if not isinstance(ch_config["gain"], (int, float)) or not 0.0 <= ch_config["gain"] <= 10.0:
+                        raise ValueError(f"Input channel {ch_idx} gain must be between 0.0 and 10.0")
 
                 if "mute" in ch_config and not isinstance(ch_config["mute"], bool):
                     raise ValueError(f"Input channel {ch_idx} mute must be boolean")
@@ -184,8 +184,8 @@ class SceneManager:
                     raise ValueError(f"Input channel {ch_idx} polarity must be boolean")
 
                 if "shading_gain" in ch_config:
-                    if not isinstance(ch_config["shading_gain"], (int, float)) or not 0.0 <= ch_config["shading_gain"] <= 2.0:
-                        raise ValueError(f"Input channel {ch_idx} shading_gain must be between 0.0 and 2.0")
+                    if not isinstance(ch_config["shading_gain"], (int, float)) or not 0.0 <= ch_config["shading_gain"] <= 10.0:
+                        raise ValueError(f"Input channel {ch_idx} shading_gain must be between 0.0 and 10.0")
 
                 if "delay_enable" in ch_config and not isinstance(ch_config["delay_enable"], bool):
                     raise ValueError(f"Input channel {ch_idx} delay_enable must be boolean")

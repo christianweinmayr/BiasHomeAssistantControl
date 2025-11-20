@@ -556,8 +556,8 @@ class BiasHTTPClient:
             # Gain
             if "gain" in ch_config:
                 gain = ch_config["gain"]
-                if not 0.0 <= gain <= 2.0:
-                    raise ValueError(f"Output channel {ch_idx} gain must be between 0.0 and 2.0")
+                if not 0.0 <= gain <= 10.0:
+                    raise ValueError(f"Output channel {ch_idx} gain must be between 0.0 and 10.0")
                 write_values.append({
                     "id": f"/Device/Audio/Presets/Live/OutputProcess/Channels/Channel-{ch_idx}/Gain/Value",
                     "data": {"type": TYPE_FLOAT, "floatValue": float(gain)},
